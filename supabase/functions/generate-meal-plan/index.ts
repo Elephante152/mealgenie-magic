@@ -45,31 +45,37 @@ Return the response in this exact JSON format:
 
     console.log('Sending request to OpenAI with system prompt:', systemPrompt);
     
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4",  // Changed from gpt-4o-mini to gpt-4
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: "Generate a meal plan based on the above preferences." }
-      ],
-      temperature: 0.7,
-      max_tokens: 2000,
-    });
-
-    if (!completion.choices[0]?.message?.content) {
-      throw new Error('No response content from OpenAI');
-    }
-
-    const response = completion.choices[0].message.content;
-    console.log('OpenAI response received:', response);
-    
     try {
-      const mealPlanContent = JSON.parse(response);
-      console.log('Successfully parsed meal plan');
-      return mealPlanContent;
-    } catch (parseError) {
-      console.error('Error parsing OpenAI response:', parseError);
-      console.log('Raw response content:', response);
-      throw new Error('Failed to parse meal plan response');
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: "Generate a meal plan based on the above preferences." }
+        ],
+        temperature: 0.7,
+        max_tokens: 2000,
+      });
+
+      if (!completion.choices[0]?.message?.content) {
+        console.error('No content in OpenAI response');
+        throw new Error('No response content from OpenAI');
+      }
+
+      const response = completion.choices[0].message.content;
+      console.log('OpenAI response received:', response);
+      
+      try {
+        const mealPlanContent = JSON.parse(response);
+        console.log('Successfully parsed meal plan:', JSON.stringify(mealPlanContent));
+        return mealPlanContent;
+      } catch (parseError) {
+        console.error('Error parsing OpenAI response:', parseError);
+        console.log('Raw response content:', response);
+        throw new Error('Failed to parse meal plan response');
+      }
+    } catch (openaiError) {
+      console.error('OpenAI API error:', openaiError);
+      throw new Error(`OpenAI API error: ${openaiError.message}`);
     }
   } catch (error) {
     console.error('Error generating meal plan with OpenAI:', error);
