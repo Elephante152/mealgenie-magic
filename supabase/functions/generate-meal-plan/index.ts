@@ -50,14 +50,28 @@ serve(async (req) => {
   }
 
   try {
-    const { preferences, additionalRequirements } = await req.json();
-    console.log('Received request with preferences:', preferences);
-    console.log('Additional requirements:', additionalRequirements);
+    // Get the JWT token from the request headers
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('No authorization header');
+    }
 
     // Create Supabase client using environment variables
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Get the user's ID from the JWT token
+    const jwt = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabase.auth.getUser(jwt);
+    
+    if (userError || !user) {
+      throw new Error('Invalid user token');
+    }
+
+    const { preferences, additionalRequirements } = await req.json();
+    console.log('Received request with preferences:', preferences);
+    console.log('Additional requirements:', additionalRequirements);
 
     // Generate mock meal plan
     const mockPlan = generateMockMealPlan(preferences, additionalRequirements);
@@ -71,6 +85,7 @@ serve(async (req) => {
           ingredients: recipe.ingredients,
           instructions: recipe.instructions,
           is_public: false,
+          user_id: user.id
         })
         .select()
         .single();
@@ -82,12 +97,13 @@ serve(async (req) => {
       return data;
     }));
 
-    // Create meal plan entry
+    // Create meal plan entry with user_id
     const { data: mealPlan, error: planError } = await supabase
       .from('meal_plans')
       .insert({
         plan_name: mockPlan.plan_name,
         recipes: recipes.map(r => r.id),
+        user_id: user.id
       })
       .select()
       .single();
