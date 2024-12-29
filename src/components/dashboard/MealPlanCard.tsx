@@ -38,6 +38,7 @@ interface MealPlanCardProps {
 
 export const MealPlanCard = ({
   plan,
+  onToggleMinimize,
   onClose,
   onSave,
   onRegenerate,
@@ -52,6 +53,9 @@ export const MealPlanCard = ({
     }, 3000)
     return () => clearTimeout(timer)
   }, [])
+
+  // Parse the plan content if it's a string
+  const planContent = typeof plan.plan === 'string' ? plan.plan : JSON.stringify(plan.plan, null, 2)
 
   return (
     <Dialog defaultOpen={true} onOpenChange={() => onClose(plan.id)}>
@@ -147,7 +151,7 @@ export const MealPlanCard = ({
         <ScrollArea className="p-6 pt-2 max-h-[80vh]">
           <div className="bg-gradient-to-br from-gray-50 to-white rounded-lg border border-gray-100 p-4">
             <pre className="whitespace-pre-wrap text-sm text-gray-700 leading-relaxed">
-              {plan.plan}
+              {planContent}
             </pre>
           </div>
         </ScrollArea>
@@ -169,5 +173,5 @@ export const MealPlanCard = ({
         </AnimatePresence>
       </DialogContent>
     </Dialog>
-  )
-}
+  );
+};
