@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
@@ -9,56 +10,23 @@ export default function Login() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate("/dashboard");
+      }
+    };
+    checkSession();
+  }, [navigate]);
+
   supabase.auth.onAuthStateChange(async (event, session) => {
-    if (event === "SIGNED_IN") {
-      if (!session?.user?.email_confirmed_at) {
-        toast({
-          title: "Please verify your email",
-          description: "Check your inbox for a verification link.",
-        });
-        return;
-      }
-
-      try {
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('preferences')
-          .eq('id', session.user.id)
-          .single();
-
-        if (error) throw error;
-
-        const rawPreferences = profile?.preferences as Record<string, unknown>;
-        const hasCompletedOnboarding = 
-          typeof rawPreferences?.diet === 'string' &&
-          Array.isArray(rawPreferences?.cuisines) &&
-          Array.isArray(rawPreferences?.allergies) &&
-          typeof rawPreferences?.activityLevel === 'string' &&
-          typeof rawPreferences?.calorieIntake === 'number' &&
-          typeof rawPreferences?.mealsPerDay === 'number' &&
-          Array.isArray(rawPreferences?.cookingTools);
-
-        if (hasCompletedOnboarding) {
-          toast({
-            title: "Welcome back!",
-            description: "You have successfully logged in.",
-          });
-          navigate("/dashboard");
-        } else {
-          toast({
-            title: "Welcome!",
-            description: "Let's set up your preferences.",
-          });
-          navigate("/onboarding");
-        }
-      } catch (error) {
-        console.error('Error checking user profile:', error);
-        toast({
-          title: "Error",
-          description: "There was a problem logging you in. Please try again.",
-          variant: "destructive",
-        });
-      }
+    if (event === "SIGNED_IN" && session) {
+      toast({
+        title: "Welcome back!",
+        description: "You have successfully logged in.",
+      });
+      navigate("/dashboard");
     }
   });
 
@@ -99,8 +67,7 @@ export default function Login() {
             },
           }}
           providers={["google"]}
-          redirectTo={window.location.origin + "/dashboard"}
-          onlyThirdPartyProviders={false}
+          redirectTo={`${window.location.origin}/dashboard`}
         />
       </Card>
     </div>
