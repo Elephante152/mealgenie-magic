@@ -6,6 +6,18 @@ import { formatMealPlanContent } from "@/utils/meal-plan-formatter";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 
+// Helper function to safely transform JSON to UserPreferences
+const transformToUserPreferences = (json: any): UserPreferences => {
+  return {
+    diet: typeof json?.diet === 'string' ? json.diet : 'omnivore',
+    cuisines: Array.isArray(json?.cuisines) ? json.cuisines : [],
+    allergies: Array.isArray(json?.allergies) ? json.allergies : [],
+    calorieIntake: typeof json?.calorieIntake === 'number' ? json.calorieIntake : 2000,
+    mealsPerDay: typeof json?.mealsPerDay === 'number' ? json.mealsPerDay : 3,
+    numDays: typeof json?.numDays === 'number' ? json.numDays : 7
+  };
+};
+
 export const useMealPlans = () => {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -53,23 +65,16 @@ export const useMealPlans = () => {
           .eq('id', user.id)
           .single();
 
-        const preferences = profileData?.preferences as UserPreferences || {
-          diet: 'omnivore',
-          cuisines: [],
-          allergies: [],
-          calorieIntake: 2000,
-          mealsPerDay: 3,
-          numDays: 7
-        };
+        const preferences = transformToUserPreferences(profileData?.preferences);
         
         const userPreferences: MealPlanPreferences = {
-          diet: preferences.diet || 'omnivore',
-          cuisines: Array.isArray(preferences.cuisines) ? preferences.cuisines : [],
-          allergies: Array.isArray(preferences.allergies) ? preferences.allergies : [],
+          diet: preferences.diet,
+          cuisines: preferences.cuisines,
+          allergies: preferences.allergies,
           parameters: {
-            mealsPerDay: preferences.mealsPerDay || 3,
-            numDays: preferences.numDays || 7,
-            caloricTarget: preferences.calorieIntake || 2000
+            mealsPerDay: preferences.mealsPerDay,
+            numDays: preferences.numDays,
+            caloricTarget: preferences.calorieIntake
           }
         };
 
