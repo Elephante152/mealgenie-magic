@@ -48,12 +48,12 @@ export const EmojiBackground = () => {
       {emojiElements.map((element) => (
         <motion.div
           key={element.id}
-          className="absolute text-3xl text-gray-200/20"
+          className="absolute text-3xl text-gray-300"
           initial={{ x: element.x, y: element.y, opacity: 0 }}
           animate={{
             y: [element.y, element.y - 20, element.y],
             x: [element.x, element.x + (Math.random() * 20 - 10), element.x],
-            opacity: [0.2, 0.3, 0.2],
+            opacity: [1, 1, 1],
           }}
           transition={{
             duration: 6 + Math.random() * 4,
