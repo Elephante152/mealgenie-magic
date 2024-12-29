@@ -60,16 +60,16 @@ export function useAuth() {
       }
 
       if (data) {
-        // Transform the data to match UserProfile type with proper type casting
-        const preferences = data.preferences as UserPreferences;
+        // Safely cast the preferences data with default values
+        const rawPreferences = data.preferences as Record<string, unknown>;
         const transformedProfile: UserProfile = {
           id: data.id,
           email: data.email,
           role: data.role || 'user',
           preferences: {
-            diet: preferences?.diet || 'omnivore',
-            cuisines: preferences?.cuisines || [],
-            allergies: preferences?.allergies || []
+            diet: (rawPreferences?.diet as string) || 'omnivore',
+            cuisines: Array.isArray(rawPreferences?.cuisines) ? rawPreferences.cuisines : [],
+            allergies: Array.isArray(rawPreferences?.allergies) ? rawPreferences.allergies : []
           }
         };
         setProfile(transformedProfile);
