@@ -3,6 +3,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { GenerateForm } from './GenerateForm';
+import { triggerConfetti } from '@/utils/confetti';
 import type { MealPlan } from '@/types/user';
 
 interface MealPlanGeneratorProps {

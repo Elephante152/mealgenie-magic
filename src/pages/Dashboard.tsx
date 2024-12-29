@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { EmojiBackground } from '@/components/dashboard/EmojiBackground';
 import { MealPlanList } from '@/components/dashboard/MealPlanList';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
@@ -10,6 +12,7 @@ import type { MealPlan } from '@/types/user';
 
 export default function Dashboard() {
   const { profile } = useAuth();
+  const { toast } = useToast();
   const [generatedPlans, setGeneratedPlans] = useState<MealPlan[]>([]);
   const [credits, setCredits] = useState(profile?.preferences?.credits || 100);
   const [isNavOpen, setIsNavOpen] = useState(false);
@@ -95,7 +98,6 @@ export default function Dashboard() {
       return;
     }
     
-    await handleGenerate("");
     closePlan(id);
   };
 
