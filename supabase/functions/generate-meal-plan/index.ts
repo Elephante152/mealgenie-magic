@@ -62,10 +62,14 @@ Format the response as a JSON object with this structure:
     });
 
     if (!response.ok) {
+      const errorData = await response.json();
+      console.error('OpenAI API error:', errorData);
       throw new Error('Failed to generate meal plan with OpenAI');
     }
 
     const data = await response.json();
+    console.log('OpenAI response:', data);
+    
     const mealPlanContent = JSON.parse(data.choices[0].message.content);
     console.log('Generated meal plan:', mealPlanContent);
     
