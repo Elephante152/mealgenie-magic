@@ -2,10 +2,14 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
 
-interface UserPreferences {
+export interface UserPreferences {
   diet: string;
   cuisines: string[];
   allergies: string[];
+  activityLevel: string;
+  calorieIntake: number;
+  mealsPerDay: number;
+  cookingTools: string[];
 }
 
 export interface UserProfile {
