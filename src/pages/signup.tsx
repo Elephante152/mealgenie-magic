@@ -53,9 +53,10 @@ export default function SignUp() {
               },
             },
           }}
-          providers={["google"]}
-          redirectTo={window.location.origin}
-          onlyThirdPartyProviders={false}
+          view="sign_up"
+          showLinks={true}
+          providers={[]}
+          redirectTo={`${window.location.origin}/onboarding`}
         />
       </Card>
     </div>
