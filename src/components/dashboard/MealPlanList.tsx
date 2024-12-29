@@ -8,6 +8,7 @@ interface MealPlanListProps {
   onClose: (id: string) => void;
   onSave: (id: string) => void;
   onRegenerate: (id: string) => void;
+  onDelete: (id: string) => void;
 }
 
 export const MealPlanList = ({
@@ -15,7 +16,8 @@ export const MealPlanList = ({
   onToggleMinimize,
   onClose,
   onSave,
-  onRegenerate
+  onRegenerate,
+  onDelete
 }: MealPlanListProps) => {
   return (
     <AnimatePresence>
@@ -27,6 +29,7 @@ export const MealPlanList = ({
           onClose={onClose}
           onSave={onSave}
           onRegenerate={onRegenerate}
+          onDelete={onDelete}
         />
       ))}
     </AnimatePresence>

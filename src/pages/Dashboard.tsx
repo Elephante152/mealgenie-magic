@@ -27,7 +27,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Menu, HelpCircle, Utensils, AlertTriangle, Globe, CreditCard } from 'lucide-react';
+import { Menu, HelpCircle, Utensils, AlertTriangle, Globe, CreditCard, Trash2 } from 'lucide-react';
 import { AnimatedGradientText } from '@/components/landing/AnimatedGradientText';
 import { EmojiBackground } from '@/components/dashboard/EmojiBackground';
 import { GenerateButton } from '@/components/dashboard/GenerateButton';
@@ -125,6 +125,33 @@ ${recipe.instructions}
 
   const closePlan = (id: string) => {
     setGeneratedPlans(prev => prev.filter(plan => plan.id !== id));
+  };
+
+  const deletePlan = async (id: string) => {
+    try {
+      const planToDelete = generatedPlans.find(plan => plan.id === id);
+      if (!planToDelete || !planToDelete.recipeId) return;
+
+      const { error } = await supabase
+        .from('meal_plans')
+        .delete()
+        .eq('id', planToDelete.recipeId);
+
+      if (error) throw error;
+
+      closePlan(id);
+      toast({
+        title: "Plan deleted",
+        description: "The meal plan has been deleted successfully.",
+      });
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete the meal plan. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const savePlan = async (id: string) => {
@@ -249,8 +276,9 @@ ${recipe.instructions}
                     </Button>
                   </HoverCardTrigger>
                   <HoverCardContent 
-                    className="w-80 p-6 bg-white bg-opacity-95 backdrop-blur-md max-h-[80vh] overflow-y-auto" 
+                    className="w-80 p-6 bg-white bg-opacity-95 backdrop-blur-md z-50" 
                     align="end" 
+                    side="right"
                     sideOffset={5}
                   >
                     <div className="space-y-4">
@@ -373,6 +401,7 @@ ${recipe.instructions}
         onClose={closePlan}
         onSave={savePlan}
         onRegenerate={regeneratePlan}
+        onDelete={deletePlan}
       />
 
       <footer className="bg-white bg-opacity-80 backdrop-blur-md shadow-sm mt-8 relative z-20">
