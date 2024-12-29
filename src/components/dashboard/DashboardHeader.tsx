@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Menu, X, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -38,48 +38,27 @@ export const DashboardHeader = ({ isNavOpen, setIsNavOpen }: DashboardHeaderProp
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 items-center">
-        <div className="mr-4 flex">
+      <div className="container flex h-14 items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <h1 className="text-xl font-semibold">Dashboard</h1>
+        </div>
+        <div className="flex items-center space-x-2">
           <Button
             variant="ghost"
-            className="mr-2 px-0 text-base hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 lg:hidden"
-            onClick={() => setIsNavOpen(!isNavOpen)}
+            size="sm"
+            className="text-base"
+            onClick={handleLogout}
+            disabled={isLoggingOut}
           >
-            {isNavOpen ? (
-              <X className="h-6 w-6" />
+            {isLoggingOut ? (
+              "Logging out..."
             ) : (
-              <Menu className="h-6 w-6" />
+              <>
+                Logout
+                <LogOut className="ml-2 h-4 w-4" />
+              </>
             )}
           </Button>
-        </div>
-        <div className="flex flex-1 items-center justify-between space-x-2">
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="ghost"
-              className="text-lg font-semibold tracking-tight"
-              onClick={() => navigate("/dashboard")}
-            >
-              Dashboard
-            </Button>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-base"
-              onClick={handleLogout}
-              disabled={isLoggingOut}
-            >
-              {isLoggingOut ? (
-                "Logging out..."
-              ) : (
-                <>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Logout
-                </>
-              )}
-            </Button>
-          </div>
         </div>
       </div>
     </header>
