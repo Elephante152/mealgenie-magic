@@ -1,103 +1,22 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
 import { EmojiBackground } from '@/components/dashboard/EmojiBackground';
 import { MealPlanList } from '@/components/dashboard/MealPlanList';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { DashboardFooter } from '@/components/dashboard/DashboardFooter';
-import { GenerateForm } from '@/components/dashboard/GenerateForm';
-import { triggerConfetti } from '@/utils/confetti';
+import { MealPlanGenerator } from '@/components/dashboard/MealPlanGenerator';
 import type { MealPlan } from '@/types/user';
 
 export default function Dashboard() {
-  const { profile, user } = useAuth(); // Add user to destructuring
-  const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+  const { profile } = useAuth();
   const [generatedPlans, setGeneratedPlans] = useState<MealPlan[]>([]);
   const [credits, setCredits] = useState(profile?.preferences?.credits || 100);
   const [isNavOpen, setIsNavOpen] = useState(false);
 
-  const handleGenerate = useCallback(async (mealPlanText: string, imageUrl?: string) => {
-    if (isLoading) return;
-    if (credits < 10) {
-      toast({
-        title: "Insufficient Credits",
-        description: "Please refill your credits to generate more meal plans.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      // Get the session token
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error('No active session');
-      }
-
-      const response = await supabase.functions.invoke('generate-meal-plan', {
-        body: {
-          preferences: profile?.preferences,
-          additionalRequirements: mealPlanText,
-          ingredientImageUrl: imageUrl,
-        },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-
-      if (response.error) throw new Error('Failed to generate meal plan');
-
-      const { data } = response;
-      setGeneratedPlans(prev => [...prev, {
-        id: crypto.randomUUID(),
-        title: data.mealPlan.plan_name,
-        plan: data.recipes.map((recipe: any) => `
-Recipe: ${recipe.title}
-
-Ingredients:
-${recipe.ingredients.join('\n')}
-
-Instructions:
-${recipe.instructions}
-        `).join('\n\n'),
-        isMinimized: false,
-        recipeId: data.mealPlan.id,
-        isFavorited: false,
-        preferences: {
-          ...profile?.preferences,
-          additionalRequirements: mealPlanText,
-        }
-      }]);
-
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ 
-          preferences: {
-            ...profile?.preferences,
-            credits: (profile?.preferences?.credits || 0) - 10
-          }
-        })
-        .eq('id', profile?.id);
-
-      if (updateError) throw updateError;
-
-      setCredits(prev => prev - 10);
-      triggerConfetti();
-    } catch (error) {
-      console.error('Generation error:', error);
-      toast({
-        title: "Error",
-        description: "Failed to generate meal plan. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [profile?.preferences, isLoading, credits, toast]);
+  const handlePlanGenerated = (newPlan: MealPlan) => {
+    setGeneratedPlans(prev => [...prev, newPlan]);
+  };
 
   const toggleMinimize = (id: string) => {
     setGeneratedPlans(prev =>
@@ -109,33 +28,6 @@ ${recipe.instructions}
 
   const closePlan = (id: string) => {
     setGeneratedPlans(prev => prev.filter(plan => plan.id !== id));
-  };
-
-  const deletePlan = async (id: string) => {
-    try {
-      const planToDelete = generatedPlans.find(plan => plan.id === id);
-      if (!planToDelete || !planToDelete.recipeId) return;
-
-      const { error } = await supabase
-        .from('recipes')
-        .delete()
-        .eq('id', planToDelete.recipeId);
-
-      if (error) throw error;
-
-      closePlan(id);
-      toast({
-        title: "Plan deleted",
-        description: "The meal plan has been deleted successfully.",
-      });
-    } catch (error) {
-      console.error('Delete error:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete the meal plan. Please try again.",
-        variant: "destructive",
-      });
-    }
   };
 
   const savePlan = async (id: string) => {
@@ -207,6 +99,33 @@ ${recipe.instructions}
     closePlan(id);
   };
 
+  const deletePlan = async (id: string) => {
+    try {
+      const planToDelete = generatedPlans.find(plan => plan.id === id);
+      if (!planToDelete || !planToDelete.recipeId) return;
+
+      const { error } = await supabase
+        .from('recipes')
+        .delete()
+        .eq('id', planToDelete.recipeId);
+
+      if (error) throw error;
+
+      closePlan(id);
+      toast({
+        title: "Plan deleted",
+        description: "The meal plan has been deleted successfully.",
+      });
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete the meal plan. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col relative overflow-hidden">
       <EmojiBackground />
@@ -219,10 +138,10 @@ ${recipe.instructions}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <GenerateForm
-            profile={profile}
-            isLoading={isLoading}
-            onGenerate={handleGenerate}
+          <MealPlanGenerator
+            onPlanGenerated={handlePlanGenerated}
+            credits={credits}
+            onCreditsUpdate={setCredits}
           />
         </motion.div>
       </main>
