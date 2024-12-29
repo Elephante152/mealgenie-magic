@@ -6,6 +6,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Slider } from "@/components/ui/slider"
+import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/hooks/useAuth"
+import { supabase } from "@/integrations/supabase/client"
 import {
   Sheet,
   SheetContent,
@@ -25,8 +28,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { useAuth } from "@/hooks/useAuth"
-import { Menu, HelpCircle, Settings, CreditCard, Wand2, X, Minimize2, Maximize2, Save, RefreshCw, Utensils, AlertTriangle, Globe, Activity, BarChart, Coffee } from 'lucide-react'
+import { Menu, HelpCircle, X, Minimize2, Maximize2, Save, RefreshCw, Utensils, AlertTriangle, Globe, CreditCard } from 'lucide-react'
 import { AnimatedGradientText } from '@/components/landing/AnimatedGradientText'
 
 interface MealPlan {
@@ -75,62 +77,119 @@ const GenerateButton = ({ onClick, isLoading }: { onClick: () => void, isLoading
       animate={isLoading ? { rotate: 360 } : {}}
       transition={isLoading ? { duration: 2, repeat: Infinity, ease: "linear" } : { duration: 0.2 }}
     >
-      <Wand2 className={`w-6 h-6 text-emerald-500 ${isLoading ? 'animate-pulse' : ''}`} />
+      <Utensils className={`w-6 h-6 text-emerald-500 ${isLoading ? 'animate-pulse' : ''}`} />
     </motion.button>
   )
 }
 
-const generateMealPlanTitle = (requirements: string) => {
-  const keywords = requirements.toLowerCase().split(' ')
-  const dietTypes = ['vegetarian', 'vegan', 'keto', 'paleo', 'mediterranean']
-  const foundDiet = dietTypes.find(diet => keywords.includes(diet)) || 'Custom'
-  const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-  return `${foundDiet} Meal Plan (${timestamp})`
-}
-
-const triggerConfetti = () => {
-  confetti({
-    particleCount: 100,
-    spread: 70,
-    origin: { y: 0.6 }
-  })
-}
-
 export default function Dashboard() {
   const { profile } = useAuth()
+  const { toast } = useToast()
   const [mealPlanText, setMealPlanText] = useState('')
-  const [numMeals, setNumMeals] = useState(profile?.preferences?.mealsPerDay || 3)
-  const [numDays, setNumDays] = useState(7)
-  const [caloricTarget, setCaloricTarget] = useState(profile?.preferences?.calorieIntake || 2000)
+  const [isLoading, setIsLoading] = useState(false)
   const [generatedPlans, setGeneratedPlans] = useState<MealPlan[]>([])
   const [credits, setCredits] = useState(100)
-  const [isLoading, setIsLoading] = useState(false)
   const [isNavOpen, setIsNavOpen] = useState(false)
 
-  const handleGenerate = useCallback(() => {
-    if (credits <= 0) {
-      console.log('No credits available')
-      return
+  const triggerConfetti = () => {
+    const count = 200
+    const defaults = {
+      origin: { y: 0.7 },
+      zIndex: 100
     }
 
-    setIsLoading(true)
-    // Simulate API call
-    setTimeout(() => {
-      const title = generateMealPlanTitle(mealPlanText)
-      const newPlan: MealPlan = {
-        id: Date.now(),
-        title,
-        plan: `Generated meal plan based on your preferences and additional requirements: ${mealPlanText}
+    function fire(particleRatio: number, opts: confetti.Options) {
+      confetti({
+        ...defaults,
+        ...opts,
+        particleCount: Math.floor(count * particleRatio)
+      })
+    }
 
-[Your generated meal plan would appear here]`,
+    fire(0.25, {
+      spread: 26,
+      startVelocity: 55,
+    })
+
+    fire(0.2, {
+      spread: 60,
+    })
+
+    fire(0.35, {
+      spread: 100,
+      decay: 0.91,
+      scalar: 0.8
+    })
+
+    fire(0.1, {
+      spread: 120,
+      startVelocity: 25,
+      decay: 0.92,
+      scalar: 1.2
+    })
+
+    fire(0.1, {
+      spread: 120,
+      startVelocity: 45,
+    })
+  }
+
+  const handleGenerate = useCallback(async () => {
+    if (isLoading) return
+
+    setIsLoading(true)
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-meal-plan`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            preferences: profile?.preferences,
+            additionalRequirements: mealPlanText,
+          }),
+        }
+      )
+
+      if (!response.ok) throw new Error('Failed to generate meal plan')
+
+      const { mealPlan, recipes } = await response.json()
+
+      // Add to generated plans state
+      setGeneratedPlans(prev => [...prev, {
+        id: Date.now(),
+        title: mealPlan.plan_name,
+        plan: recipes.map((recipe: any) => `
+Recipe: ${recipe.title}
+
+Ingredients:
+${recipe.ingredients.join('\n')}
+
+Instructions:
+${recipe.instructions}
+        `).join('\n\n'),
         isMinimized: false
-      }
-      setGeneratedPlans(prev => [...prev, newPlan])
-      setCredits(prev => prev - 1)
-      setIsLoading(false)
+      }])
+
       triggerConfetti()
-    }, 2000)
-  }, [mealPlanText, credits])
+      toast({
+        title: "Success!",
+        description: "Your meal plan has been generated.",
+      })
+    } catch (error) {
+      console.error('Generation error:', error)
+      toast({
+        title: "Error",
+        description: "Failed to generate meal plan. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }, [mealPlanText, profile?.preferences, isLoading, toast])
 
   const toggleMinimize = (id: number) => {
     setGeneratedPlans(prev =>
@@ -150,21 +209,8 @@ export default function Dashboard() {
   }
 
   const regeneratePlan = (id: number) => {
-    if (credits <= 0) {
-      console.log('No credits available')
-      return
-    }
-    
     // Implement regenerate functionality
     console.log('Regenerating plan:', id)
-    setCredits(prev => prev - 1)
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!isLoading && credits > 0) {
-      handleGenerate()
-    }
   }
 
   return (
@@ -227,7 +273,7 @@ export default function Dashboard() {
           transition={{ duration: 0.5 }}
         >
           <AnimatedGradientText text="Generate Meal Plan" className="text-2xl font-semibold mb-4 text-center block" />
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={(e) => { e.preventDefault(); handleGenerate(); }} className="space-y-4">
             <div className="relative">
               <Label htmlFor="mealPlanText" className="flex items-center text-gray-700">
                 Additional Requirements
@@ -314,8 +360,8 @@ export default function Dashboard() {
                           type="number"
                           min="1"
                           max="6"
-                          value={numMeals}
-                          onChange={(e) => setNumMeals(parseInt(e.target.value))}
+                          value={profile?.preferences?.mealsPerDay || 3}
+                          onChange={(e) => setCredits(parseInt(e.target.value))}
                           className="mt-1"
                         />
                       </div>
@@ -326,8 +372,8 @@ export default function Dashboard() {
                           type="number"
                           min="1"
                           max="30"
-                          value={numDays}
-                          onChange={(e) => setNumDays(parseInt(e.target.value))}
+                          value={7}
+                          onChange={(e) => setCredits(parseInt(e.target.value))}
                           className="mt-1"
                         />
                       </div>
@@ -340,8 +386,8 @@ export default function Dashboard() {
                           min={1000}
                           max={4000}
                           step={50}
-                          value={[caloricTarget]}
-                          onValueChange={(value) => setCaloricTarget(value[0])}
+                          value={[2000]}
+                          onValueChange={(value) => setCredits(value[0])}
                           className="z-10 relative"
                         />
                         <div 
@@ -349,7 +395,7 @@ export default function Dashboard() {
                           style={{ filter: 'blur(4px)' }} 
                         />
                       </div>
-                      <div className="text-center mt-1">{caloricTarget} calories</div>
+                      <div className="text-center mt-1">2000 calories</div>
                     </div>
                   </div>
                 </DialogContent>
