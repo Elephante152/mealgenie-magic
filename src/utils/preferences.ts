@@ -25,9 +25,13 @@ export const hasCompletedPreferences = (preferences: Json | null): boolean => {
   
   if (!isUserPreferences(preferences)) return false;
   
+  // Now we know preferences.cuisines and preferences.allergies are arrays
+  const cuisines = preferences.cuisines as Json[];
+  const allergies = preferences.allergies as Json[];
+  
   return !!(
     preferences.diet &&
-    preferences.cuisines.length >= 0 &&
-    preferences.allergies.length >= 0
+    cuisines.length >= 0 &&
+    allergies.length >= 0
   );
 };
