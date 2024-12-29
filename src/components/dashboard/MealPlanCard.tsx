@@ -1,5 +1,7 @@
 import { motion } from 'framer-motion'
 import { X, Minimize2, Maximize2, Save, RefreshCw } from 'lucide-react'
+import { useToast } from "@/hooks/use-toast"
+import { supabase } from "@/integrations/supabase/client"
 
 interface MealPlan {
   id: string // Changed from number to string
@@ -24,6 +26,8 @@ export const MealPlanCard = ({
   onSave,
   onRegenerate
 }: MealPlanCardProps) => {
+  const { toast } = useToast()
+
   return (
     <motion.div
       key={plan.id}
