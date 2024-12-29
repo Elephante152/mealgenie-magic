@@ -35,10 +35,11 @@ import { GenerateButton } from '@/components/dashboard/GenerateButton'
 import { MealPlanCard } from '@/components/dashboard/MealPlanCard'
 
 interface MealPlan {
-  id: number
+  id: string // Changed from number to string
   title: string
   plan: string
   isMinimized: boolean
+  recipeId?: string // Added to store the Supabase recipe ID
 }
 
 export default function Dashboard() {
@@ -109,7 +110,7 @@ export default function Dashboard() {
 
       const { data } = response
       setGeneratedPlans(prev => [...prev, {
-        id: Date.now(),
+        id: crypto.randomUUID(), // Using UUID instead of Date.now()
         title: data.mealPlan.plan_name,
         plan: data.recipes.map((recipe: any) => `
 Recipe: ${recipe.title}
@@ -120,7 +121,8 @@ ${recipe.ingredients.join('\n')}
 Instructions:
 ${recipe.instructions}
         `).join('\n\n'),
-        isMinimized: false
+        isMinimized: false,
+        recipeId: data.mealPlan.id // Store the Supabase recipe ID
       }])
 
       triggerConfetti()
@@ -140,7 +142,7 @@ ${recipe.instructions}
     }
   }, [mealPlanText, profile?.preferences, isLoading, toast])
 
-  const toggleMinimize = (id: number) => {
+  const toggleMinimize = (id: string) => {
     setGeneratedPlans(prev =>
       prev.map(plan =>
         plan.id === id ? { ...plan, isMinimized: !plan.isMinimized } : plan
@@ -148,20 +150,20 @@ ${recipe.instructions}
     )
   }
 
-  const closePlan = (id: number) => {
+  const closePlan = (id: string) => {
     setGeneratedPlans(prev => prev.filter(plan => plan.id !== id))
   }
 
-  const savePlan = async (id: number) => {
+  const savePlan = async (id: string) => {
     const planToSave = generatedPlans.find(plan => plan.id === id)
-    if (!planToSave) return
+    if (!planToSave || !planToSave.recipeId) return
 
     try {
       const { error } = await supabase
         .from('favorites')
         .insert({
           user_id: profile?.id,
-          recipe_id: id,
+          recipe_id: planToSave.recipeId, // Using the Supabase recipe ID
         })
 
       if (error) throw error
@@ -180,7 +182,7 @@ ${recipe.instructions}
     }
   }
 
-  const regeneratePlan = (id: number) => {
+  const regeneratePlan = (id: string) => {
     handleGenerate()
     closePlan(id)
   }

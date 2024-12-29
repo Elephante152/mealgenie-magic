@@ -2,18 +2,19 @@ import { motion } from 'framer-motion'
 import { X, Minimize2, Maximize2, Save, RefreshCw } from 'lucide-react'
 
 interface MealPlan {
-  id: number
+  id: string // Changed from number to string
   title: string
   plan: string
   isMinimized: boolean
+  recipeId?: string // Added to store the Supabase recipe ID
 }
 
 interface MealPlanCardProps {
   plan: MealPlan
-  onToggleMinimize: (id: number) => void
-  onClose: (id: number) => void
-  onSave: (id: number) => void
-  onRegenerate: (id: number) => void
+  onToggleMinimize: (id: string) => void // Updated to use string
+  onClose: (id: string) => void // Updated to use string
+  onSave: (id: string) => void // Updated to use string
+  onRegenerate: (id: string) => void // Updated to use string
 }
 
 export const MealPlanCard = ({
