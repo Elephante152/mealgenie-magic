@@ -27,7 +27,8 @@ export const IngredientImageUpload = ({ onImageUploaded }: IngredientImageUpload
     input.accept = 'image/*';
     input.capture = 'environment';
     input.onchange = (e) => {
-      const event = e as ChangeEvent<HTMLInputElement>;
+      // First cast to unknown, then to the specific type
+      const event = (e as unknown) as ChangeEvent<HTMLInputElement>;
       handleImageSelect(event);
     };
     input.click();
