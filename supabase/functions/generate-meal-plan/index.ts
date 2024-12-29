@@ -71,6 +71,12 @@ serve(async (req) => {
       }),
     })
 
+    if (!openAIResponse.ok) {
+      const errorData = await openAIResponse.json()
+      console.error('OpenAI API error:', errorData)
+      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`)
+    }
+
     const openAIData = await openAIResponse.json()
     console.log('Received response from OpenAI:', openAIData)
 
