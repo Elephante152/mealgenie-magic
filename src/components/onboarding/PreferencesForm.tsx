@@ -74,23 +74,23 @@ export const PreferencesForm = ({ onSubmit, isLoading, initialValues }: Preferen
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-4">
-        <Label className="text-lg font-semibold flex items-center">
+    <form onSubmit={handleSubmit} className="space-y-8">
+      <div className="space-y-6">
+        <Label className="text-xl font-semibold flex items-center">
           <Utensils className="w-5 h-5 mr-2" />
           Diet Type
         </Label>
-        <RadioGroup value={dietType} onValueChange={setDietType} className="grid grid-cols-2 gap-4">
+        <RadioGroup 
+          value={dietType} 
+          onValueChange={setDietType} 
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+        >
           {DIET_TYPES.map(diet => (
             <div key={diet} className="relative">
               <RadioGroupItem value={diet} id={diet} className="peer sr-only" />
               <Label
                 htmlFor={diet}
-                className={`flex items-center justify-center px-4 py-3 bg-white border-2 rounded-xl cursor-pointer transition-all duration-200 ${
-                  dietType === diet
-                    ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm'
-                    : 'border-gray-200 hover:border-emerald-200 hover:bg-gray-50'
-                }`}
+                className="flex items-center justify-center px-4 py-3 bg-white border-2 rounded-xl cursor-pointer transition-all duration-200 hover:bg-gray-50 peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-700"
               >
                 {diet}
               </Label>
@@ -99,22 +99,22 @@ export const PreferencesForm = ({ onSubmit, isLoading, initialValues }: Preferen
         </RadioGroup>
       </div>
 
-      <div className="space-y-4">
-        <Label className="text-lg font-semibold flex items-center">
+      <div className="space-y-6">
+        <Label className="text-xl font-semibold flex items-center">
           <Activity className="w-5 h-5 mr-2" />
           Activity Level
         </Label>
-        <RadioGroup value={activityLevel} onValueChange={setActivityLevel} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <RadioGroup 
+          value={activityLevel} 
+          onValueChange={setActivityLevel} 
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+        >
           {ACTIVITY_LEVELS.map(level => (
             <div key={level} className="relative">
               <RadioGroupItem value={level} id={level} className="peer sr-only" />
               <Label
                 htmlFor={level}
-                className={`flex items-center justify-center px-4 py-3 bg-white border-2 rounded-xl cursor-pointer transition-all duration-200 ${
-                  activityLevel === level
-                    ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm'
-                    : 'border-gray-200 hover:border-emerald-200 hover:bg-gray-50'
-                }`}
+                className="flex items-center justify-center px-4 py-3 bg-white border-2 rounded-xl cursor-pointer transition-all duration-200 hover:bg-gray-50 peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-700"
               >
                 {level}
               </Label>
@@ -123,8 +123,8 @@ export const PreferencesForm = ({ onSubmit, isLoading, initialValues }: Preferen
         </RadioGroup>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="allergies" className="text-lg font-semibold flex items-center">
+      <div className="space-y-4">
+        <Label htmlFor="allergies" className="text-xl font-semibold flex items-center">
           <AlertTriangle className="w-5 h-5 mr-2" />
           Allergies
         </Label>
@@ -133,35 +133,35 @@ export const PreferencesForm = ({ onSubmit, isLoading, initialValues }: Preferen
           placeholder="Enter any allergies or intolerances..."
           value={allergies}
           onChange={(e) => setAllergies(e.target.value)}
-          className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          className="min-h-[100px] bg-white"
         />
       </div>
 
-      <div className="space-y-2">
-        <Label className="text-lg font-semibold flex items-center">
+      <div className="space-y-4">
+        <Label className="text-xl font-semibold flex items-center">
           <Globe className="w-5 h-5 mr-2" />
           Favorite Cuisines
         </Label>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {CUISINES.map(cuisine => (
-            <div key={cuisine} className="flex items-center space-x-2">
+            <div key={cuisine} className="flex items-center space-x-3 bg-white p-3 rounded-lg">
               <Switch
                 id={cuisine}
                 checked={favoriteCuisines.includes(cuisine)}
                 onCheckedChange={() => handleCuisineToggle(cuisine)}
               />
-              <Label htmlFor={cuisine}>{cuisine}</Label>
+              <Label htmlFor={cuisine} className="cursor-pointer">{cuisine}</Label>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="calorieIntake" className="text-lg font-semibold flex items-center">
+      <div className="space-y-4">
+        <Label htmlFor="calorieIntake" className="text-xl font-semibold flex items-center">
           <BarChart className="w-5 h-5 mr-2" />
           Daily Calorie Intake
         </Label>
-        <div className="flex items-center space-x-4">
+        <div className="bg-white p-6 rounded-lg space-y-6">
           <Slider
             id="calorieIntake"
             min={1000}
@@ -169,39 +169,41 @@ export const PreferencesForm = ({ onSubmit, isLoading, initialValues }: Preferen
             step={50}
             value={[calorieIntake]}
             onValueChange={(value) => setCalorieIntake(value[0])}
-            className="flex-grow"
           />
-          <span className="text-gray-700 font-medium">{calorieIntake} cal</span>
+          <div className="text-center font-medium text-lg text-emerald-600">
+            {calorieIntake} calories per day
+          </div>
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label className="text-lg font-semibold flex items-center">
+      <div className="space-y-4">
+        <Label className="text-xl font-semibold flex items-center">
           <Coffee className="w-5 h-5 mr-2" />
           Preferred Cooking Tools
         </Label>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {COOKING_TOOLS.map(tool => (
-            <div key={tool} className="flex items-center space-x-2">
+            <div key={tool} className="flex items-center space-x-3 bg-white p-3 rounded-lg">
               <Switch
                 id={tool}
                 checked={preferredCookingTools.includes(tool)}
                 onCheckedChange={() => handleCookingToolToggle(tool)}
               />
-              <Label htmlFor={tool}>{tool}</Label>
+              <Label htmlFor={tool} className="cursor-pointer">{tool}</Label>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="flex justify-center pt-6">
+      <div className="pt-8 flex justify-center">
         <Button 
           type="submit" 
           disabled={isLoading}
-          className="bg-emerald-500 text-white px-8 py-3 rounded-full font-semibold hover:bg-emerald-600 transition-colors"
+          size="lg"
+          className="bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-3 rounded-full font-semibold transition-colors w-full sm:w-auto"
         >
           <Wand2 className="w-5 h-5 mr-2" />
-          {isLoading ? 'Saving...' : 'Create My Personalized Experience'}
+          {isLoading ? 'Saving...' : 'Update Preferences'}
         </Button>
       </div>
     </form>

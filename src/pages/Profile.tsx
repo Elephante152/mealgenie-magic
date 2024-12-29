@@ -132,43 +132,54 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 py-12 px-4 relative overflow-hidden">
+    <div className="min-h-screen bg-gray-100 relative overflow-hidden">
       <EmojiBackground />
       
-      <Button
-        variant="ghost"
-        onClick={() => navigate("/dashboard")}
-        className="absolute top-4 left-4 flex items-center gap-2 text-gray-600 hover:text-gray-900"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back to Dashboard
-      </Button>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8">
+          <Button
+            variant="outline"
+            onClick={() => navigate("/dashboard")}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 bg-white/80 backdrop-blur-sm"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Dashboard
+          </Button>
+        </div>
 
-      <div className="max-w-4xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="bg-white/70 backdrop-blur-lg rounded-3xl shadow-xl p-8 relative z-10"
-          style={{
-            background: "linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7))",
-          }}
+          className="relative z-10"
         >
-          <AnimatedGradientText 
-            text="Your Preferences" 
-            className="text-3xl font-bold mb-6 text-center block" 
-          />
-          
-          <p className="text-gray-600 text-center mb-8">
-            Update your preferences to get more personalized meal recommendations.
-          </p>
-
-          {preferences && (
-            <PreferencesForm 
-              onSubmit={handleSubmit} 
-              isLoading={saving}
-              initialValues={preferences}
+          <div className="text-center mb-8">
+            <AnimatedGradientText 
+              text="Your Preferences" 
+              className="text-4xl sm:text-5xl font-bold mb-4" 
             />
+            <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+              Update your preferences to get more personalized meal recommendations.
+            </p>
+          </div>
+
+          {loading ? (
+            <div className="flex items-center justify-center min-h-[400px]">
+              <div className="text-center space-y-4">
+                <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+                <p className="text-gray-600">Loading your preferences...</p>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white/70 backdrop-blur-lg rounded-3xl shadow-xl p-6 sm:p-8 md:p-12">
+              {preferences && (
+                <PreferencesForm 
+                  onSubmit={handleSubmit} 
+                  isLoading={saving}
+                  initialValues={preferences}
+                />
+              )}
+            </div>
           )}
         </motion.div>
       </div>
