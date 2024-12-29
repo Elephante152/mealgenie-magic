@@ -8,23 +8,44 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { MealPlanList } from '@/components/dashboard/MealPlanList';
-import type { MealPlan } from '@/types/user';
+import type { MealPlan, MealPlanPreferences } from '@/types/user';
 
 interface DBMealPlan {
   id: string;
   plan_name: string;
-  recipes: {
-    title: string;
-    ingredients: string[];
-    instructions: string;
-    preferences?: {
-      diet?: string;
-      cuisines?: string[];
-      allergies?: string[];
-      // ... other preference fields
-    };
-  }[];
+  recipes: string; // This is actually a JSON string from the database
+  created_at: string;
+  user_id: string;
+  start_date: string | null;
+  end_date: string | null;
 }
+
+interface ParsedRecipe {
+  title: string;
+  ingredients: string[];
+  instructions: string;
+  preferences?: {
+    diet?: string;
+    cuisines?: string[];
+    allergies?: string[];
+    activityLevel?: string;
+    calorieIntake?: number;
+    mealsPerDay?: number;
+    cookingTools?: string[];
+    credits?: number;
+  };
+}
+
+const createDefaultPreferences = (): MealPlanPreferences => ({
+  diet: 'omnivore',
+  cuisines: [],
+  allergies: [],
+  activityLevel: 'moderate',
+  calorieIntake: 2000,
+  mealsPerDay: 3,
+  cookingTools: [],
+  credits: 0
+});
 
 const MealPlans = () => {
   const { toast } = useToast();
@@ -47,13 +68,28 @@ const MealPlans = () => {
         return [];
       }
 
-      return data.map((plan: DBMealPlan) => ({
-        id: plan.id,
-        title: plan.plan_name,
-        plan: JSON.stringify(plan.recipes, null, 2),
-        isMinimized: false,
-        preferences: plan.recipes[0]?.preferences || {},
-      }));
+      return data.map((plan: DBMealPlan) => {
+        let parsedRecipes: ParsedRecipe[] = [];
+        try {
+          parsedRecipes = JSON.parse(plan.recipes as string);
+        } catch (e) {
+          console.error('Error parsing recipes:', e);
+        }
+
+        const firstRecipe = parsedRecipes[0];
+        const preferences: MealPlanPreferences = {
+          ...createDefaultPreferences(),
+          ...(firstRecipe?.preferences || {})
+        };
+
+        return {
+          id: plan.id,
+          title: plan.plan_name,
+          plan: JSON.stringify(parsedRecipes, null, 2),
+          isMinimized: false,
+          preferences
+        };
+      });
     },
   });
 
