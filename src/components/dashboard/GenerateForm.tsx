@@ -40,7 +40,7 @@ export const GenerateForm = ({ profile, isLoading, onGenerate }: GenerateFormPro
         <p className="text-gray-600">Customize your meal plan with your preferences and requirements</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6 bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg">
+      <form onSubmit={handleSubmit} className="space-y-8 bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg">
         <div className="relative">
           <Label htmlFor="mealPlanText" className="flex items-center text-gray-700 mb-2 text-lg">
             Additional Requirements
@@ -96,7 +96,7 @@ export const GenerateForm = ({ profile, isLoading, onGenerate }: GenerateFormPro
             placeholder="Enter any specific requirements for your meal plan..."
             value={mealPlanText}
             onChange={(e) => setMealPlanText(e.target.value)}
-            className="min-h-[80px] resize-none bg-white/50 backdrop-blur-sm border-gray-200 focus:border-emerald-500 focus:ring focus:ring-emerald-200 transition duration-200"
+            className="min-h-[80px] resize-none bg-white/50 backdrop-blur-sm border-gray-200 focus:border-[#9b87f5] focus:ring focus:ring-purple-200 transition duration-200"
           />
         </div>
 
@@ -105,7 +105,7 @@ export const GenerateForm = ({ profile, isLoading, onGenerate }: GenerateFormPro
           <IngredientImageUpload onImageUploaded={handleImageUploaded} />
         </div>
 
-        <div className="flex flex-col items-center gap-4 pt-4">
+        <div className="flex flex-col items-center gap-6 pt-8">
           <GenerateButton 
             onClick={() => onGenerate(mealPlanText, ingredientImageUrl || undefined)} 
             isLoading={isLoading} 
@@ -114,7 +114,7 @@ export const GenerateForm = ({ profile, isLoading, onGenerate }: GenerateFormPro
             <DialogTrigger asChild>
               <button 
                 type="button"
-                className="text-sm text-gray-500 hover:text-gray-700 transition duration-200 flex items-center gap-2"
+                className="text-sm text-gray-500 hover:text-[#7E69AB] transition duration-200 flex items-center gap-2"
               >
                 <HelpCircle className="w-4 h-4" />
                 Adjust Parameters
