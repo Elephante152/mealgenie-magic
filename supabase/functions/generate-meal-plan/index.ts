@@ -1,6 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import "https://deno.land/x/xhr@0.1.0/mod.ts"
+import OpenAI from "https://deno.land/x/openai@v4.24.0/mod.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,6 +17,10 @@ const generateMealPlanWithAI = async (preferences: any, additionalRequirements: 
   console.log('Generating meal plan with preferences:', preferences);
   console.log('Additional requirements:', additionalRequirements);
 
+  const openai = new OpenAI({
+    apiKey: openAIApiKey,
+  });
+
   const systemPrompt = `You are a professional nutritionist and meal planner. Create a detailed meal plan that follows these guidelines:
 - Consider dietary restrictions: ${preferences?.diet || 'None'}
 - Avoid allergens: ${preferences?.allergies?.join(', ') || 'None'}
@@ -29,57 +34,31 @@ For each meal, provide:
 1. Recipe name
 2. List of ingredients with quantities
 3. Step-by-step cooking instructions
-4. Approximate calories
-
-Format the response as a JSON object with this structure:
-{
-  "plan_name": "Custom name based on preferences",
-  "recipes": [
-    {
-      "title": "Recipe name",
-      "ingredients": ["ingredient 1", "ingredient 2"],
-      "instructions": "Step by step instructions",
-      "calories": number
-    }
-  ]
-}`;
+4. Approximate calories`;
 
   try {
     console.log('Sending request to OpenAI with system prompt:', systemPrompt);
     
-    const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: 'Generate a meal plan based on the above preferences.' }
-        ],
-        temperature: 0.7,
-        max_tokens: 2000,
-      }),
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: "Generate a meal plan based on the above preferences." }
+      ],
+      temperature: 0.7,
+      max_tokens: 2000,
     });
 
-    if (!openAIResponse.ok) {
-      const errorData = await openAIResponse.json();
-      console.error('OpenAI API error:', errorData);
-      throw new Error(`Failed to generate meal plan with OpenAI: ${errorData.error?.message || 'Unknown error'}`);
-    }
-
-    const data = await openAIResponse.json();
-    console.log('OpenAI response:', data);
+    const response = completion.choices[0].message.content;
+    console.log('OpenAI response:', response);
     
     let mealPlanContent;
     try {
-      mealPlanContent = JSON.parse(data.choices[0].message.content);
+      mealPlanContent = JSON.parse(response);
       console.log('Successfully parsed meal plan:', mealPlanContent);
     } catch (parseError) {
       console.error('Error parsing OpenAI response:', parseError);
-      console.log('Raw response content:', data.choices[0].message.content);
+      console.log('Raw response content:', response);
       throw new Error('Failed to parse meal plan response');
     }
     
