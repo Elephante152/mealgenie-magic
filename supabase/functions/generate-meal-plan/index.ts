@@ -46,7 +46,7 @@ Return the response in this exact JSON format:
     console.log('Sending request to OpenAI with system prompt:', systemPrompt);
     
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4",  // Changed from gpt-4o-mini to gpt-4
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: "Generate a meal plan based on the above preferences." }
@@ -55,12 +55,15 @@ Return the response in this exact JSON format:
       max_tokens: 2000,
     });
 
+    if (!completion.choices[0]?.message?.content) {
+      throw new Error('No response content from OpenAI');
+    }
+
     const response = completion.choices[0].message.content;
-    console.log('OpenAI response received');
+    console.log('OpenAI response received:', response);
     
-    let mealPlanContent;
     try {
-      mealPlanContent = JSON.parse(response);
+      const mealPlanContent = JSON.parse(response);
       console.log('Successfully parsed meal plan');
       return mealPlanContent;
     } catch (parseError) {
