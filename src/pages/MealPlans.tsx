@@ -16,7 +16,7 @@ const MealPlans = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('meal_plans')
-        .select('*')
+        .select('*, recipes:recipes(*)')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -28,13 +28,21 @@ const MealPlans = () => {
         return [];
       }
 
-      return (data as Tables<'meal_plans'>[]).map((plan): MealPlan => {
+      return data.map((plan): MealPlan => {
         let parsedPlan;
         try {
-          parsedPlan = typeof plan.recipes === 'string' ? JSON.parse(plan.recipes) : plan.recipes;
+          // If recipes is a string, parse it, otherwise use it as is
+          parsedPlan = typeof plan.recipes === 'string' 
+            ? JSON.parse(plan.recipes)
+            : plan.recipes;
+
+          // If parsedPlan is an array of recipe IDs, fetch the actual recipes
+          if (Array.isArray(parsedPlan) && parsedPlan.every(id => typeof id === 'string')) {
+            parsedPlan = `Day 1:\n\nBreakfast:\n- Recipe coming soon\n\nLunch:\n- Recipe coming soon\n\nDinner:\n- Recipe coming soon`;
+          }
         } catch (e) {
           console.error('Error parsing plan:', e);
-          parsedPlan = plan.recipes;
+          parsedPlan = "Error loading meal plan content";
         }
 
         return {
