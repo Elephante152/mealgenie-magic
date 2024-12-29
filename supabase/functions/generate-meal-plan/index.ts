@@ -1,99 +1,81 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts"
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Mock data generator function
+const generateMockMealPlan = (preferences: any, additionalRequirements: string) => {
+  console.log('Generating mock meal plan with preferences:', preferences);
+  console.log('Additional requirements:', additionalRequirements);
+  
+  // Mock meal plan data
+  return {
+    plan_name: "7-Day Healthy Meal Plan",
+    meals: [
+      {
+        title: "Grilled Chicken Salad",
+        ingredients: [
+          "chicken breast", "2",
+          "mixed greens", "200g",
+          "cherry tomatoes", "100g",
+          "olive oil", "2 tbsp",
+          "balsamic vinegar", "1 tbsp"
+        ],
+        instructions: "1. Season chicken breast\n2. Grill until cooked through\n3. Chop vegetables\n4. Mix with dressing\n5. Serve",
+        nutritionalInfo: {
+          calories: 350,
+          protein: "30g",
+          carbs: "15g",
+          fats: "20g"
+        }
+      },
+      {
+        title: "Quinoa Buddha Bowl",
+        ingredients: [
+          "quinoa", "1 cup",
+          "chickpeas", "1 can",
+          "sweet potato", "1 medium",
+          "kale", "2 cups",
+          "tahini", "2 tbsp"
+        ],
+        instructions: "1. Cook quinoa\n2. Roast chickpeas and sweet potato\n3. Massage kale\n4. Assemble bowl\n5. Drizzle with tahini",
+        nutritionalInfo: {
+          calories: 450,
+          protein: "15g",
+          carbs: "65g",
+          fats: "15g"
+        }
+      }
+    ]
+  };
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { preferences, additionalRequirements } = await req.json()
-    console.log('Received request with preferences:', preferences)
-    console.log('Additional requirements:', additionalRequirements)
+    const { preferences, additionalRequirements } = await req.json();
+    console.log('Received request with preferences:', preferences);
+    console.log('Additional requirements:', additionalRequirements);
+
+    // Generate mock meal plan
+    const mealPlan = generateMockMealPlan(preferences, additionalRequirements);
+
+    // Store mock recipes in Supabase
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY')
-    if (!openAIApiKey) {
-      throw new Error('OpenAI API key not configured')
-    }
-
-    // Create the prompt for meal plan generation
-    const prompt = `Create a detailed meal plan based on these preferences:
-    - Diet: ${preferences?.diet || 'Not specified'}
-    - Cuisines: ${preferences?.cuisines?.join(', ') || 'Not specified'}
-    - Allergies to avoid: ${preferences?.allergies?.join(', ') || 'None'}
-    
-    Additional Requirements: ${additionalRequirements || 'None'}
-    
-    Please provide a meal plan in this exact JSON format:
-    {
-      "plan_name": "Name of the meal plan",
-      "meals": [
-        {
-          "title": "Meal name",
-          "ingredients": ["ingredient1", "amount1", "ingredient2", "amount2"],
-          "instructions": "Step by step instructions",
-          "nutritionalInfo": {
-            "calories": number,
-            "protein": "Xg",
-            "carbs": "Xg",
-            "fats": "Xg"
-          }
-        }
-      ]
-    }`
-
-    console.log('Sending request to OpenAI')
-    const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a professional nutritionist and chef. Generate meal plans that are detailed, healthy, and follow the user\'s preferences exactly. Always respond with valid JSON.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-      }),
-    })
-
-    if (!openAIResponse.ok) {
-      const errorData = await openAIResponse.json()
-      console.error('OpenAI API error:', errorData)
-      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`)
-    }
-
-    const openAIData = await openAIResponse.json()
-    console.log('Received response from OpenAI:', openAIData)
-
-    if (!openAIData.choices?.[0]?.message?.content) {
-      throw new Error('Invalid response from OpenAI')
-    }
-
-    const mealPlan = JSON.parse(openAIData.choices[0].message.content)
-
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Supabase credentials not configured')
+      throw new Error('Supabase credentials not configured');
     }
 
-    const supabase = createClient(supabaseUrl, supabaseKey)
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Store recipes in Supabase
     const recipes = await Promise.all(mealPlan.meals.map(async (meal: any) => {
@@ -106,14 +88,14 @@ serve(async (req) => {
           is_public: false,
         })
         .select()
-        .single()
+        .single();
 
       if (error) {
-        console.error('Error storing recipe:', error)
-        throw error
+        console.error('Error storing recipe:', error);
+        throw error;
       }
-      return recipe
-    }))
+      return recipe;
+    }));
 
     // Create meal plan entry
     const { data: createdPlan, error: planError } = await supabase
@@ -123,11 +105,11 @@ serve(async (req) => {
         recipes: recipes.map(r => r.id),
       })
       .select()
-      .single()
+      .single();
 
     if (planError) {
-      console.error('Error storing meal plan:', planError)
-      throw planError
+      console.error('Error storing meal plan:', planError);
+      throw planError;
     }
 
     return new Response(
@@ -138,9 +120,9 @@ serve(async (req) => {
           'Content-Type': 'application/json'
         }
       }
-    )
+    );
   } catch (error) {
-    console.error('Error in generate-meal-plan function:', error)
+    console.error('Error in generate-meal-plan function:', error);
     return new Response(
       JSON.stringify({ error: 'An unexpected error occurred', details: error.message }),
       { 
@@ -150,6 +132,6 @@ serve(async (req) => {
           'Content-Type': 'application/json'
         }
       }
-    )
+    );
   }
-})
+});
