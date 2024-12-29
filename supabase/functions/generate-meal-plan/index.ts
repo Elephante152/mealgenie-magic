@@ -75,13 +75,11 @@ Return the response in this exact JSON format:
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Get the authorization header
     const authHeader = req.headers.get('authorization');
     console.log('Auth header present:', !!authHeader);
     
@@ -89,7 +87,6 @@ serve(async (req) => {
       throw new Error('No authorization header');
     }
 
-    // Create Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
@@ -100,7 +97,6 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Verify the user's JWT
     const jwt = authHeader.replace('Bearer ', '');
     const { data: { user }, error: userError } = await supabase.auth.getUser(jwt);
     
@@ -111,16 +107,13 @@ serve(async (req) => {
 
     console.log('User verified:', user.id);
 
-    // Parse the request body
     const { preferences, additionalRequirements, ingredientImageUrl } = await req.json();
     console.log('Received request with preferences:', preferences);
     console.log('Additional requirements:', additionalRequirements);
     console.log('Ingredient image URL:', ingredientImageUrl);
 
-    // Generate meal plan using OpenAI
     const mealPlan = await generateMealPlanWithAI(preferences, additionalRequirements);
 
-    // Store recipes in Supabase
     const recipes = await Promise.all(mealPlan.recipes.map(async (recipe: any) => {
       const { data, error } = await supabase
         .from('recipes')
@@ -141,7 +134,6 @@ serve(async (req) => {
       return data;
     }));
 
-    // Create meal plan entry
     const { data: storedMealPlan, error: planError } = await supabase
       .from('meal_plans')
       .insert({
