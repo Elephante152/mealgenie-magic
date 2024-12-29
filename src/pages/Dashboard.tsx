@@ -12,7 +12,7 @@ import { triggerConfetti } from '@/utils/confetti';
 import type { MealPlan } from '@/types/user';
 
 export default function Dashboard() {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth(); // Add user to destructuring
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [generatedPlans, setGeneratedPlans] = useState<MealPlan[]>([]);
@@ -32,11 +32,20 @@ export default function Dashboard() {
 
     setIsLoading(true);
     try {
+      // Get the session token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session');
+      }
+
       const response = await supabase.functions.invoke('generate-meal-plan', {
         body: {
           preferences: profile?.preferences,
           additionalRequirements: mealPlanText,
           ingredientImageUrl: imageUrl,
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
         },
       });
 
