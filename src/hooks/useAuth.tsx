@@ -96,6 +96,8 @@ export function useAuth() {
   }
 
   const signOut = async () => {
+    setUser(null);
+    setProfile(null);
     await supabase.auth.signOut();
     toast({
       title: "Signed out",
