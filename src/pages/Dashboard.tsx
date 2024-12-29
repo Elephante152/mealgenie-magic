@@ -1,25 +1,24 @@
-import { useState, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import confetti from 'canvas-confetti'
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Slider } from "@/components/ui/slider"
-import { useToast } from "@/hooks/use-toast"
-import { useAuth } from "@/hooks/useAuth"
-import { supabase } from "@/integrations/supabase/client"
+import { useState, useCallback } from 'react';
+import { motion } from 'framer-motion';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Slider } from "@/components/ui/slider";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
-} from "@/components/ui/sheet"
+} from "@/components/ui/sheet";
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
-} from "@/components/ui/hover-card"
+} from "@/components/ui/hover-card";
 import {
   Dialog,
   DialogContent,
@@ -27,54 +26,47 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Menu, HelpCircle, Utensils, AlertTriangle, Globe, CreditCard } from 'lucide-react'
-import { AnimatedGradientText } from '@/components/landing/AnimatedGradientText'
-import { EmojiBackground } from '@/components/dashboard/EmojiBackground'
-import { GenerateButton } from '@/components/dashboard/GenerateButton'
-import { MealPlanCard } from '@/components/dashboard/MealPlanCard'
-
-interface MealPlan {
-  id: string
-  title: string
-  plan: string
-  isMinimized: boolean
-  recipeId?: string
-  isFavorited?: boolean
-}
+} from "@/components/ui/dialog";
+import { Menu, HelpCircle, Utensils, AlertTriangle, Globe, CreditCard } from 'lucide-react';
+import { AnimatedGradientText } from '@/components/landing/AnimatedGradientText';
+import { EmojiBackground } from '@/components/dashboard/EmojiBackground';
+import { GenerateButton } from '@/components/dashboard/GenerateButton';
+import { MealPlanList } from '@/components/dashboard/MealPlanList';
+import { triggerConfetti } from '@/utils/confetti';
+import type { MealPlan } from '@/types/user';
 
 export default function Dashboard() {
-  const { profile } = useAuth()
-  const { toast } = useToast()
-  const [mealPlanText, setMealPlanText] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [generatedPlans, setGeneratedPlans] = useState<MealPlan[]>([])
-  const [credits, setCredits] = useState(profile?.preferences?.credits || 100)
-  const [isNavOpen, setIsNavOpen] = useState(false)
+  const { profile } = useAuth();
+  const { toast } = useToast();
+  const [mealPlanText, setMealPlanText] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [generatedPlans, setGeneratedPlans] = useState<MealPlan[]>([]);
+  const [credits, setCredits] = useState(profile?.preferences?.credits || 100);
+  const [isNavOpen, setIsNavOpen] = useState(false);
 
   const handleGenerate = useCallback(async () => {
-    if (isLoading) return
+    if (isLoading) return;
     if (credits < 10) {
       toast({
         title: "Insufficient Credits",
         description: "Please refill your credits to generate more meal plans.",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
     try {
       const response = await supabase.functions.invoke('generate-meal-plan', {
         body: {
           preferences: profile?.preferences,
           additionalRequirements: mealPlanText,
         },
-      })
+      });
 
-      if (response.error) throw new Error('Failed to generate meal plan')
+      if (response.error) throw new Error('Failed to generate meal plan');
 
-      const { data } = response
+      const { data } = response;
       setGeneratedPlans(prev => [...prev, {
         id: crypto.randomUUID(),
         title: data.mealPlan.plan_name,
@@ -90,7 +82,7 @@ ${recipe.instructions}
         isMinimized: false,
         recipeId: data.mealPlan.id,
         isFavorited: false
-      }])
+      }]);
 
       // Update user credits
       const { error: updateError } = await supabase
@@ -101,43 +93,43 @@ ${recipe.instructions}
             credits: (profile?.preferences?.credits || 0) - 10
           }
         })
-        .eq('id', profile?.id)
+        .eq('id', profile?.id);
 
-      if (updateError) throw updateError
+      if (updateError) throw updateError;
 
-      setCredits(prev => prev - 10)
-      triggerConfetti()
+      setCredits(prev => prev - 10);
+      triggerConfetti();
       toast({
         title: "Success!",
         description: "Your meal plan has been generated.",
-      })
+      });
     } catch (error) {
-      console.error('Generation error:', error)
+      console.error('Generation error:', error);
       toast({
         title: "Error",
         description: "Failed to generate meal plan. Please try again.",
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [mealPlanText, profile?.preferences, isLoading, credits, toast])
+  }, [mealPlanText, profile?.preferences, isLoading, credits, toast]);
 
   const toggleMinimize = (id: string) => {
     setGeneratedPlans(prev =>
       prev.map(plan =>
         plan.id === id ? { ...plan, isMinimized: !plan.isMinimized } : plan
       )
-    )
-  }
+    );
+  };
 
   const closePlan = (id: string) => {
-    setGeneratedPlans(prev => prev.filter(plan => plan.id !== id))
-  }
+    setGeneratedPlans(prev => prev.filter(plan => plan.id !== id));
+  };
 
   const savePlan = async (id: string) => {
-    const planToSave = generatedPlans.find(plan => plan.id === id)
-    if (!planToSave || !planToSave.recipeId) return
+    const planToSave = generatedPlans.find(plan => plan.id === id);
+    if (!planToSave || !planToSave.recipeId) return;
 
     try {
       const { error } = await supabase
@@ -145,31 +137,31 @@ ${recipe.instructions}
         .upsert({
           user_id: profile?.id,
           recipe_id: planToSave.recipeId,
-        })
+        });
 
-      if (error) throw error
+      if (error) throw error;
 
       setGeneratedPlans(prev =>
         prev.map(plan =>
           plan.id === id ? { ...plan, isFavorited: !plan.isFavorited } : plan
         )
-      )
+      );
 
       toast({
         title: planToSave.isFavorited ? "Removed from favorites" : "Added to favorites",
         description: planToSave.isFavorited 
           ? "The meal plan has been removed from your favorites."
           : "The meal plan has been saved to your favorites.",
-      })
+      });
     } catch (error) {
-      console.error('Save error:', error)
+      console.error('Save error:', error);
       toast({
         title: "Error",
         description: "Failed to update favorites. Please try again.",
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   const regeneratePlan = async (id: string) => {
     if (credits < 10) {
@@ -177,13 +169,13 @@ ${recipe.instructions}
         title: "Insufficient Credits",
         description: "Please refill your credits to regenerate meal plans.",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
     
-    await handleGenerate()
-    closePlan(id)
-  }
+    await handleGenerate();
+    closePlan(id);
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col relative overflow-hidden">
@@ -375,18 +367,13 @@ ${recipe.instructions}
         </motion.div>
       </main>
 
-      <AnimatePresence>
-        {generatedPlans.map((plan) => (
-          <MealPlanCard
-            key={plan.id}
-            plan={plan}
-            onToggleMinimize={toggleMinimize}
-            onClose={closePlan}
-            onSave={savePlan}
-            onRegenerate={regeneratePlan}
-          />
-        ))}
-      </AnimatePresence>
+      <MealPlanList
+        plans={generatedPlans}
+        onToggleMinimize={toggleMinimize}
+        onClose={closePlan}
+        onSave={savePlan}
+        onRegenerate={regeneratePlan}
+      />
 
       <footer className="bg-white bg-opacity-80 backdrop-blur-md shadow-sm mt-8 relative z-20">
         <div className="container mx-auto px-4 py-4 text-center text-gray-600">
@@ -397,5 +384,5 @@ ${recipe.instructions}
         </div>
       </footer>
     </div>
-  )
+  );
 }
