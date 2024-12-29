@@ -13,22 +13,31 @@ export default function Login() {
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
+      if (session?.user) {
         navigate("/dashboard");
       }
     };
     checkSession();
   }, [navigate]);
 
-  supabase.auth.onAuthStateChange(async (event, session) => {
-    if (event === "SIGNED_IN" && session) {
-      toast({
-        title: "Welcome back!",
-        description: "You have successfully logged in.",
-      });
-      navigate("/dashboard");
-    }
-  });
+  // Listen for auth state changes
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_IN" && session) {
+        toast({
+          title: "Welcome back!",
+          description: `Signed in as ${session.user.email}`,
+        });
+        navigate("/dashboard");
+      } else if (event === "SIGNED_OUT") {
+        navigate("/login");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate, toast]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -68,6 +77,7 @@ export default function Login() {
           }}
           providers={["google"]}
           redirectTo={`${window.location.origin}/dashboard`}
+          onlyThirdPartyProviders={true}
         />
       </Card>
     </div>

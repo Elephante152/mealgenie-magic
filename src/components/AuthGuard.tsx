@@ -14,7 +14,7 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      if (!session?.user) {
         toast({
           title: "Authentication required",
           description: "Please sign in to access this page",
@@ -23,10 +23,10 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
       }
     };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT" || !session) {
         toast({
-          title: "Session expired",
+          title: "Session ended",
           description: "Please sign in again",
         });
         navigate("/login");
