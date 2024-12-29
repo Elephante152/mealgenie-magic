@@ -9,6 +9,17 @@ export interface UserPreferences {
   credits: number;
 }
 
+export interface MealPlanParameters {
+  mealsPerDay?: number;
+  numDays?: number;
+  caloricTarget?: number;
+}
+
+export interface MealPlanPreferences extends UserPreferences {
+  additionalRequirements?: string;
+  parameters?: MealPlanParameters;
+}
+
 export interface MealPlan {
   id: string;
   title: string;
@@ -16,6 +27,7 @@ export interface MealPlan {
   isMinimized: boolean;
   recipeId?: string;
   isFavorited?: boolean;
+  preferences?: MealPlanPreferences;
 }
 
 export interface UserProfile {

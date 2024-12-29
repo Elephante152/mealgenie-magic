@@ -19,7 +19,7 @@ export default function Dashboard() {
   const [credits, setCredits] = useState(profile?.preferences?.credits || 100);
   const [isNavOpen, setIsNavOpen] = useState(false);
 
-  const handleGenerate = useCallback(async (mealPlanText: string) => {
+  const handleGenerate = useCallback(async (mealPlanText: string, parameters?: any) => {
     if (isLoading) return;
     if (credits < 10) {
       toast({
@@ -36,6 +36,7 @@ export default function Dashboard() {
         body: {
           preferences: profile?.preferences,
           additionalRequirements: mealPlanText,
+          parameters
         },
       });
 
@@ -56,7 +57,12 @@ ${recipe.instructions}
         `).join('\n\n'),
         isMinimized: false,
         recipeId: data.mealPlan.id,
-        isFavorited: false
+        isFavorited: false,
+        preferences: {
+          ...profile?.preferences,
+          additionalRequirements: mealPlanText,
+          parameters
+        }
       }]);
 
       const { error: updateError } = await supabase
@@ -73,10 +79,6 @@ ${recipe.instructions}
 
       setCredits(prev => prev - 10);
       triggerConfetti();
-      toast({
-        title: "Success!",
-        description: "Your meal plan has been generated.",
-      });
     } catch (error) {
       console.error('Generation error:', error);
       toast({
