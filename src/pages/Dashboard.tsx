@@ -28,58 +28,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Menu, HelpCircle, X, Minimize2, Maximize2, Save, RefreshCw, Utensils, AlertTriangle, Globe, CreditCard } from 'lucide-react'
+import { Menu, HelpCircle, Utensils, AlertTriangle, Globe, CreditCard } from 'lucide-react'
 import { AnimatedGradientText } from '@/components/landing/AnimatedGradientText'
+import { EmojiBackground } from '@/components/dashboard/EmojiBackground'
+import { GenerateButton } from '@/components/dashboard/GenerateButton'
+import { MealPlanCard } from '@/components/dashboard/MealPlanCard'
 
 interface MealPlan {
   id: number
   title: string
   plan: string
   isMinimized: boolean
-}
-
-const EmojiBackground = () => {
-  return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-      {[...Array(20)].map((_, i) => (
-        <motion.div
-          key={i}
-          className="absolute text-4xl"
-          initial={{
-            top: "-20%",
-            left: `${Math.random() * 100}%`,
-            rotate: Math.random() * 360,
-          }}
-          animate={{
-            top: "120%",
-            rotate: Math.random() * 360 + 360,
-          }}
-          transition={{
-            duration: Math.random() * 20 + 10,
-            repeat: Infinity,
-            ease: "linear",
-          }}
-        >
-          {['🥗', '🍽️', '🥘', '🍳', '🥑', '🍆', '🥕'][Math.floor(Math.random() * 7)]}
-        </motion.div>
-      ))}
-    </div>
-  )
-}
-
-const GenerateButton = ({ onClick, isLoading }: { onClick: () => void, isLoading: boolean }) => {
-  return (
-    <motion.button
-      onClick={onClick}
-      className="p-4 rounded-full shadow-lg bg-white"
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      animate={isLoading ? { rotate: 360 } : {}}
-      transition={isLoading ? { duration: 2, repeat: Infinity, ease: "linear" } : { duration: 0.2 }}
-    >
-      <Utensils className={`w-6 h-6 text-emerald-500 ${isLoading ? 'animate-pulse' : ''}`} />
-    </motion.button>
-  )
 }
 
 export default function Dashboard() {
@@ -139,30 +98,20 @@ export default function Dashboard() {
 
     setIsLoading(true)
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-meal-plan`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            preferences: profile?.preferences,
-            additionalRequirements: mealPlanText,
-          }),
-        }
-      )
+      const response = await supabase.functions.invoke('generate-meal-plan', {
+        body: {
+          preferences: profile?.preferences,
+          additionalRequirements: mealPlanText,
+        },
+      })
 
-      if (!response.ok) throw new Error('Failed to generate meal plan')
+      if (response.error) throw new Error('Failed to generate meal plan')
 
-      const { mealPlan, recipes } = await response.json()
-
-      // Add to generated plans state
+      const { data } = response
       setGeneratedPlans(prev => [...prev, {
         id: Date.now(),
-        title: mealPlan.plan_name,
-        plan: recipes.map((recipe: any) => `
+        title: data.mealPlan.plan_name,
+        plan: data.recipes.map((recipe: any) => `
 Recipe: ${recipe.title}
 
 Ingredients:
@@ -203,19 +152,43 @@ ${recipe.instructions}
     setGeneratedPlans(prev => prev.filter(plan => plan.id !== id))
   }
 
-  const savePlan = (id: number) => {
-    // Implement save functionality
-    console.log('Saving plan:', id)
+  const savePlan = async (id: number) => {
+    const planToSave = generatedPlans.find(plan => plan.id === id)
+    if (!planToSave) return
+
+    try {
+      const { error } = await supabase
+        .from('favorites')
+        .insert({
+          user_id: profile?.id,
+          recipe_id: id,
+        })
+
+      if (error) throw error
+
+      toast({
+        title: "Saved!",
+        description: "Meal plan has been saved to your favorites.",
+      })
+    } catch (error) {
+      console.error('Save error:', error)
+      toast({
+        title: "Error",
+        description: "Failed to save meal plan. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
   const regeneratePlan = (id: number) => {
-    // Implement regenerate functionality
-    console.log('Regenerating plan:', id)
+    handleGenerate()
+    closePlan(id)
   }
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col relative overflow-hidden">
       <EmojiBackground />
+      
       <header className="bg-white bg-opacity-80 backdrop-blur-md shadow-sm relative z-20">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div>
@@ -361,7 +334,6 @@ ${recipe.instructions}
                           min="1"
                           max="6"
                           value={profile?.preferences?.mealsPerDay || 3}
-                          onChange={(e) => setCredits(parseInt(e.target.value))}
                           className="mt-1"
                         />
                       </div>
@@ -373,7 +345,6 @@ ${recipe.instructions}
                           min="1"
                           max="30"
                           value={7}
-                          onChange={(e) => setCredits(parseInt(e.target.value))}
                           className="mt-1"
                         />
                       </div>
@@ -387,7 +358,6 @@ ${recipe.instructions}
                           max={4000}
                           step={50}
                           value={[2000]}
-                          onValueChange={(value) => setCredits(value[0])}
                           className="z-10 relative"
                         />
                         <div 
@@ -407,62 +377,14 @@ ${recipe.instructions}
 
       <AnimatePresence>
         {generatedPlans.map((plan) => (
-          <motion.div
+          <MealPlanCard
             key={plan.id}
-            initial={plan.isMinimized ? { opacity: 0, x: 20, y: 0 } : { opacity: 0, y: 20 }}
-            animate={plan.isMinimized ? { opacity: 1, x: 0, y: 0 } : { opacity: 1, y: 0 }}
-            exit={plan.isMinimized ? { opacity: 0, x: 20, y: 0 } : { opacity: 0, y: -20 }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className={`fixed ${
-              plan.isMinimized
-                ? 'bottom-4 left-4 w-64'
-                : 'bottom-20 left-1/2 transform -translate-x-1/2 max-w-xl w-full mx-4'
-            } bg-white bg-opacity-90 backdrop-blur-md rounded-lg shadow-lg p-6 z-30`}
-            layout
-          >
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-gray-800">{plan.title}</h2>
-              <div className="flex space-x-2">
-                <button 
-                  onClick={() => toggleMinimize(plan.id)}
-                  className="text-gray-500 hover:text-gray-700"
-                  aria-label={plan.isMinimized ? "Maximize" : "Minimize"}
-                >
-                  {plan.isMinimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
-                </button>
-                <button 
-                  onClick={() => closePlan(plan.id)}
-                  className="text-gray-500 hover:text-gray-700"
-                  aria-label="Close"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-            {!plan.isMinimized && (
-              <>
-                <pre className="whitespace-pre-wrap bg-gray-100 bg-opacity-50 p-4 rounded-md text-sm text-gray-700 mb-4">
-                  {plan.plan}
-                </pre>
-                <div className="flex justify-end space-x-2">
-                  <button 
-                    onClick={() => savePlan(plan.id)}
-                    className="text-emerald-600 hover:text-emerald-700"
-                    aria-label="Save plan"
-                  >
-                    <Save className="w-5 h-5" />
-                  </button>
-                  <button 
-                    onClick={() => regeneratePlan(plan.id)}
-                    className="text-blue-600 hover:text-blue-700"
-                    aria-label="Regenerate plan"
-                  >
-                    <RefreshCw className="w-5 h-5" />
-                  </button>
-                </div>
-              </>
-            )}
-          </motion.div>
+            plan={plan}
+            onToggleMinimize={toggleMinimize}
+            onClose={closePlan}
+            onSave={savePlan}
+            onRegenerate={regeneratePlan}
+          />
         ))}
       </AnimatePresence>
 
