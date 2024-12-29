@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "./use-toast";
 
 export interface UserPreferences {
   diet: string;
@@ -10,7 +12,7 @@ export interface UserPreferences {
   calorieIntake: number;
   mealsPerDay: number;
   cookingTools: string[];
-  credits: number; // Added credits property
+  credits: number;
 }
 
 export interface UserProfile {
@@ -24,6 +26,8 @@ export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     // Get initial session
@@ -79,7 +83,7 @@ export function useAuth() {
             calorieIntake: Number(rawPreferences?.calorieIntake) || 2000,
             mealsPerDay: Number(rawPreferences?.mealsPerDay) || 3,
             cookingTools: Array.isArray(rawPreferences?.cookingTools) ? rawPreferences.cookingTools : [],
-            credits: Number(rawPreferences?.credits) || 100 // Added default value for credits
+            credits: Number(rawPreferences?.credits) || 100
           }
         };
         setProfile(transformedProfile);
@@ -93,6 +97,11 @@ export function useAuth() {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    toast({
+      title: "Signed out",
+      description: "You have been successfully signed out.",
+    });
+    navigate("/");
   };
 
   return {
