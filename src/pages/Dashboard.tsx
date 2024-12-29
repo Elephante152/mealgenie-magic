@@ -1,50 +1,25 @@
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Menu, HelpCircle, Utensils, AlertTriangle, Globe, CreditCard, Trash2 } from 'lucide-react';
-import { AnimatedGradientText } from '@/components/landing/AnimatedGradientText';
 import { EmojiBackground } from '@/components/dashboard/EmojiBackground';
-import { GenerateButton } from '@/components/dashboard/GenerateButton';
 import { MealPlanList } from '@/components/dashboard/MealPlanList';
+import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+import { DashboardFooter } from '@/components/dashboard/DashboardFooter';
+import { GenerateForm } from '@/components/dashboard/GenerateForm';
 import { triggerConfetti } from '@/utils/confetti';
 import type { MealPlan } from '@/types/user';
 
 export default function Dashboard() {
   const { profile } = useAuth();
   const { toast } = useToast();
-  const [mealPlanText, setMealPlanText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [generatedPlans, setGeneratedPlans] = useState<MealPlan[]>([]);
   const [credits, setCredits] = useState(profile?.preferences?.credits || 100);
   const [isNavOpen, setIsNavOpen] = useState(false);
 
-  const handleGenerate = useCallback(async () => {
+  const handleGenerate = useCallback(async (mealPlanText: string) => {
     if (isLoading) return;
     if (credits < 10) {
       toast({
@@ -84,7 +59,6 @@ ${recipe.instructions}
         isFavorited: false
       }]);
 
-      // Update user credits
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ 
@@ -113,7 +87,7 @@ ${recipe.instructions}
     } finally {
       setIsLoading(false);
     }
-  }, [mealPlanText, profile?.preferences, isLoading, credits, toast]);
+  }, [profile?.preferences, isLoading, credits, toast]);
 
   const toggleMinimize = (id: string) => {
     setGeneratedPlans(prev =>
@@ -200,198 +174,27 @@ ${recipe.instructions}
       return;
     }
     
-    await handleGenerate();
+    await handleGenerate("");
     closePlan(id);
   };
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col relative overflow-hidden">
       <EmojiBackground />
+      <DashboardHeader isNavOpen={isNavOpen} setIsNavOpen={setIsNavOpen} />
       
-      <header className="bg-white bg-opacity-80 backdrop-blur-md shadow-sm relative z-20">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div>
-            <AnimatedGradientText text="MealPrepGenie" className="text-2xl font-bold" />
-          </div>
-          <button 
-            onClick={() => setIsNavOpen(true)} 
-            className="text-gray-500 hover:text-gray-700"
-            aria-label="Open navigation menu"
-          >
-            <Menu className="w-6 h-6" />
-          </button>
-        </div>
-      </header>
-
-      <Sheet open={isNavOpen} onOpenChange={setIsNavOpen}>
-        <SheetContent side="right" className="w-[300px] sm:w-[400px] bg-white bg-opacity-90 backdrop-blur-md">
-          <SheetHeader>
-            <SheetTitle>
-              <AnimatedGradientText text="Navigation" className="text-2xl font-semibold" />
-            </SheetTitle>
-          </SheetHeader>
-          <nav className="mt-8">
-            <ul className="space-y-4">
-              <li>
-                <Button variant="ghost" className="w-full justify-start text-lg text-gray-600 hover:text-gray-900">
-                  Dashboard
-                </Button>
-              </li>
-              <li>
-                <Button variant="ghost" className="w-full justify-start text-lg text-gray-600 hover:text-gray-900">
-                  Meal Plans
-                </Button>
-              </li>
-              <li>
-                <Button variant="ghost" className="w-full justify-start text-lg text-gray-600 hover:text-gray-900">
-                  Profile
-                </Button>
-              </li>
-              <li>
-                <Button variant="ghost" className="w-full justify-start text-lg text-gray-600 hover:text-gray-900">
-                  Settings
-                </Button>
-              </li>
-            </ul>
-          </nav>
-        </SheetContent>
-      </Sheet>
-
-      <main className="flex-grow flex items-center justify-center relative z-10">
+      <main className="flex-grow flex items-center justify-center relative z-10 px-4 py-8">
         <motion.div
-          className="bg-white bg-opacity-30 backdrop-blur-lg rounded-3xl shadow-lg p-6 max-w-md w-full mx-4"
+          className="bg-white/30 backdrop-blur-lg rounded-3xl shadow-lg p-6 w-full max-w-md mx-auto"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <AnimatedGradientText text="Generate Meal Plan" className="text-2xl font-semibold mb-4 text-center block" />
-          <form onSubmit={(e) => { e.preventDefault(); handleGenerate(); }} className="space-y-4">
-            <div className="relative">
-              <Label htmlFor="mealPlanText" className="flex items-center text-gray-700">
-                Additional Requirements
-                <HoverCard>
-                  <HoverCardTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-4 w-4 p-0 ml-2">
-                      <HelpCircle className="h-4 w-4 text-gray-400" />
-                    </Button>
-                  </HoverCardTrigger>
-                  <HoverCardContent 
-                    className="w-80 p-6 bg-white bg-opacity-95 backdrop-blur-md z-50" 
-                    align="end" 
-                    side="right"
-                    sideOffset={5}
-                  >
-                    <div className="space-y-4">
-                      <h3 className="font-semibold text-lg text-gray-900">Your Preferences</h3>
-                      <div className="grid gap-3">
-                        <div className="space-y-1">
-                          <h4 className="font-medium text-sm text-gray-700 flex items-center">
-                            <Utensils className="w-4 h-4 mr-2" />
-                            Diet Type
-                          </h4>
-                          <p className="text-sm text-gray-600 bg-gray-100 p-2 rounded">
-                            {profile?.preferences?.diet || "Not set"}
-                          </p>
-                        </div>
-                        <div className="space-y-1">
-                          <h4 className="font-medium text-sm text-gray-700 flex items-center">
-                            <AlertTriangle className="w-4 h-4 mr-2" />
-                            Allergies
-                          </h4>
-                          <p className="text-sm text-gray-600 bg-gray-100 p-2 rounded">
-                            {profile?.preferences?.allergies?.join(", ") || "None"}
-                          </p>
-                        </div>
-                        <div className="space-y-1">
-                          <h4 className="font-medium text-sm text-gray-700 flex items-center">
-                            <Globe className="w-4 h-4 mr-2" />
-                            Favorite Cuisines
-                          </h4>
-                          <p className="text-sm text-gray-600 bg-gray-100 p-2 rounded">
-                            {profile?.preferences?.cuisines?.join(", ") || "Not set"}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </HoverCardContent>
-                </HoverCard>
-              </Label>
-              <Textarea
-                id="mealPlanText"
-                placeholder="Enter any specific requirements for your meal plan..."
-                value={mealPlanText}
-                onChange={(e) => setMealPlanText(e.target.value)}
-                className="mt-2 h-20 resize-none bg-white bg-opacity-50 backdrop-blur-sm border-gray-200 focus:border-emerald-500 focus:ring focus:ring-emerald-200 transition duration-200"
-              />
-            </div>
-            <div className="flex flex-col items-center space-y-4">
-              <GenerateButton onClick={handleGenerate} isLoading={isLoading} />
-              <Dialog>
-                <DialogTrigger asChild>
-                  <button 
-                    type="button"
-                    className="text-sm text-gray-500 hover:text-gray-700 transition duration-200"
-                  >
-                    Adjust Parameters
-                  </button>
-                </DialogTrigger>
-                <DialogContent className="bg-white bg-opacity-90 backdrop-blur-md">
-                  <DialogHeader>
-                    <DialogTitle>
-                      <AnimatedGradientText text="Adjust Meal Plan Parameters" className="text-2xl font-semibold" />
-                    </DialogTitle>
-                    <DialogDescription>
-                      Fine-tune your meal plan generation settings here.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <div className="flex space-x-4">
-                      <div className="flex-1">
-                        <Label htmlFor="numMeals">Meals per Day</Label>
-                        <Input
-                          id="numMeals"
-                          type="number"
-                          min="1"
-                          max="6"
-                          value={profile?.preferences?.mealsPerDay || 3}
-                          className="mt-1"
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <Label htmlFor="numDays">Number of Days</Label>
-                        <Input
-                          id="numDays"
-                          type="number"
-                          min="1"
-                          max="30"
-                          value={7}
-                          className="mt-1"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="caloricTarget">Daily Caloric Target</Label>
-                      <div className="relative mt-2">
-                        <Slider
-                          id="caloricTarget"
-                          min={1000}
-                          max={4000}
-                          step={50}
-                          value={[2000]}
-                          className="z-10 relative"
-                        />
-                        <div 
-                          className="absolute inset-0 bg-gradient-to-r from-emerald-400 via-yellow-400 to-orange-500 rounded-md opacity-50" 
-                          style={{ filter: 'blur(4px)' }} 
-                        />
-                      </div>
-                      <div className="text-center mt-1">2000 calories</div>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-          </form>
+          <GenerateForm
+            profile={profile}
+            isLoading={isLoading}
+            onGenerate={handleGenerate}
+          />
         </motion.div>
       </main>
 
@@ -404,14 +207,7 @@ ${recipe.instructions}
         onDelete={deletePlan}
       />
 
-      <footer className="bg-white bg-opacity-80 backdrop-blur-md shadow-sm mt-8 relative z-20">
-        <div className="container mx-auto px-4 py-4 text-center text-gray-600">
-          <p>Available Credits: {credits}</p>
-          <Button variant="link" className="text-emerald-600 hover:text-emerald-700 font-medium">
-            Refill Credits <CreditCard className="inline w-4 h-4 ml-1" />
-          </Button>
-        </div>
-      </footer>
+      <DashboardFooter credits={credits} />
     </div>
   );
 }

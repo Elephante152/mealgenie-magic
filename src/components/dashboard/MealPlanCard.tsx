@@ -40,17 +40,17 @@ export const MealPlanCard = ({
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
       className={`fixed ${
         plan.isMinimized
-          ? 'bottom-4 left-4 w-64'
-          : 'bottom-20 left-1/2 transform -translate-x-1/2 max-w-xl w-full mx-4'
-      } bg-gradient-to-br from-white via-white to-gray-50 backdrop-blur-md rounded-xl shadow-xl border border-gray-100 p-6 z-30`}
+          ? 'bottom-20 left-4 w-64 max-h-[80vh]'
+          : 'bottom-20 left-1/2 transform -translate-x-1/2 max-w-xl w-[calc(100%-2rem)] mx-auto'
+      } bg-gradient-to-br from-white via-white to-gray-50 backdrop-blur-md rounded-xl shadow-xl border border-gray-100 p-6 overflow-hidden z-50`}
       style={{ pointerEvents: 'auto' }}
       layout
     >
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold bg-gradient-to-r from-emerald-600 to-emerald-400 bg-clip-text text-transparent">
+        <h2 className="text-xl font-semibold bg-gradient-to-r from-emerald-600 to-emerald-400 bg-clip-text text-transparent truncate pr-2">
           {plan.title}
         </h2>
-        <div className="flex space-x-2">
+        <div className="flex space-x-2 shrink-0">
           <Button
             variant="ghost"
             size="icon"
@@ -73,7 +73,7 @@ export const MealPlanCard = ({
       </div>
       {!plan.isMinimized && (
         <>
-          <div className="bg-gradient-to-br from-gray-50 to-white rounded-lg border border-gray-100 p-4 mb-4 max-h-[60vh] overflow-y-auto">
+          <div className="bg-gradient-to-br from-gray-50 to-white rounded-lg border border-gray-100 p-4 mb-4 overflow-y-auto max-h-[60vh]">
             <pre className="whitespace-pre-wrap text-sm text-gray-700 leading-relaxed">
               {plan.plan}
             </pre>
