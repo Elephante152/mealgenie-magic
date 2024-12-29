@@ -7,6 +7,7 @@ import { Loader2 } from "lucide-react";
 import { PreferencesForm } from "@/components/onboarding/PreferencesForm";
 import { AnimatedGradientText } from "@/components/ui/animated-gradient-text";
 import type { UserPreferences } from "@/types/user";
+import type { Json } from "@/integrations/supabase/types";
 
 interface ProfilePreferences {
   dietType: string;
@@ -44,15 +45,16 @@ export default function Profile() {
         if (error) throw error;
 
         if (profile?.preferences) {
-          const userPrefs = profile.preferences as UserPreferences;
+          // First cast to unknown, then to the correct type
+          const rawPrefs = profile.preferences as unknown as UserPreferences;
           setPreferences({
-            dietType: userPrefs.diet,
-            favoriteCuisines: userPrefs.cuisines || [],
-            allergies: (userPrefs.allergies || []).join(', '),
-            activityLevel: userPrefs.activityLevel || 'Moderately Active',
-            calorieIntake: userPrefs.calorieIntake || 2000,
-            mealsPerDay: userPrefs.mealsPerDay || 3,
-            preferredCookingTools: userPrefs.cookingTools || [],
+            dietType: rawPrefs.diet || 'omnivore',
+            favoriteCuisines: rawPrefs.cuisines || [],
+            allergies: (rawPrefs.allergies || []).join(', '),
+            activityLevel: rawPrefs.activityLevel || 'Moderately Active',
+            calorieIntake: rawPrefs.calorieIntake || 2000,
+            mealsPerDay: rawPrefs.mealsPerDay || 3,
+            preferredCookingTools: rawPrefs.cookingTools || [],
           });
         }
 
@@ -79,18 +81,21 @@ export default function Profile() {
         throw new Error("No user found");
       }
 
+      // Create a preferences object that matches the Json type
+      const preferencesData: Json = {
+        diet: updatedPreferences.dietType.toLowerCase(),
+        cuisines: updatedPreferences.favoriteCuisines,
+        allergies: updatedPreferences.allergies.split(',').map(a => a.trim()),
+        activityLevel: updatedPreferences.activityLevel,
+        calorieIntake: updatedPreferences.calorieIntake,
+        mealsPerDay: updatedPreferences.mealsPerDay,
+        cookingTools: updatedPreferences.preferredCookingTools,
+      };
+
       const { error } = await supabase
         .from("profiles")
         .update({
-          preferences: {
-            diet: updatedPreferences.dietType.toLowerCase(),
-            cuisines: updatedPreferences.favoriteCuisines,
-            allergies: updatedPreferences.allergies.split(',').map(a => a.trim()),
-            activityLevel: updatedPreferences.activityLevel,
-            calorieIntake: updatedPreferences.calorieIntake,
-            mealsPerDay: updatedPreferences.mealsPerDay,
-            cookingTools: updatedPreferences.preferredCookingTools,
-          } as UserPreferences,
+          preferences: preferencesData,
         })
         .eq("id", user.id);
 
