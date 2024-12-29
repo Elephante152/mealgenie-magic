@@ -45,6 +45,8 @@ Format the response as a JSON object with this structure:
 }`;
 
   try {
+    console.log('Sending request to OpenAI with system prompt:', systemPrompt);
+    
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -52,26 +54,34 @@ Format the response as a JSON object with this structure:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: 'Generate a meal plan based on the above preferences.' }
         ],
         temperature: 0.7,
+        max_tokens: 2000,
       }),
     });
 
     if (!response.ok) {
       const errorData = await response.json();
       console.error('OpenAI API error:', errorData);
-      throw new Error('Failed to generate meal plan with OpenAI');
+      throw new Error(`Failed to generate meal plan with OpenAI: ${errorData.error?.message || 'Unknown error'}`);
     }
 
     const data = await response.json();
     console.log('OpenAI response:', data);
     
-    const mealPlanContent = JSON.parse(data.choices[0].message.content);
-    console.log('Generated meal plan:', mealPlanContent);
+    let mealPlanContent;
+    try {
+      mealPlanContent = JSON.parse(data.choices[0].message.content);
+      console.log('Successfully parsed meal plan:', mealPlanContent);
+    } catch (parseError) {
+      console.error('Error parsing OpenAI response:', parseError);
+      console.log('Raw response content:', data.choices[0].message.content);
+      throw new Error('Failed to parse meal plan response');
+    }
     
     return mealPlanContent;
   } catch (error) {
