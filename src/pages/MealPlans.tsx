@@ -27,7 +27,7 @@ const MealPlans = () => {
         return [];
       }
 
-      return data.map((plan) => {
+      return data.map((plan): MealPlan => {
         let parsedPlan;
         try {
           parsedPlan = typeof plan.recipes === 'string' ? JSON.parse(plan.recipes) : plan.recipes;
@@ -41,6 +41,7 @@ const MealPlans = () => {
           title: plan.plan_name,
           plan: typeof parsedPlan === 'string' ? parsedPlan : JSON.stringify(parsedPlan, null, 2),
           isMinimized: false,
+          isFavorited: plan.is_favorited || false,
           preferences: {
             diet: 'omnivore',
             cuisines: [],

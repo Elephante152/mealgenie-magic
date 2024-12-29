@@ -2,11 +2,11 @@ export interface UserPreferences {
   diet: string;
   cuisines: string[];
   allergies: string[];
-  activityLevel: string;
-  calorieIntake: number;
-  mealsPerDay: number;
-  cookingTools: string[];
-  credits: number;
+  activityLevel?: string;
+  calorieIntake?: number;
+  mealsPerDay?: number;
+  cookingTools?: string[];
+  credits?: number;
 }
 
 export interface MealPlanParameters {
@@ -15,7 +15,10 @@ export interface MealPlanParameters {
   caloricTarget?: number;
 }
 
-export interface MealPlanPreferences extends UserPreferences {
+export interface MealPlanPreferences {
+  diet: string;
+  cuisines: string[];
+  allergies: string[];
   additionalRequirements?: string;
   parameters?: MealPlanParameters;
 }
