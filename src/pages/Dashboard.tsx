@@ -109,7 +109,7 @@ ${recipe.instructions}
       if (!planToDelete || !planToDelete.recipeId) return;
 
       const { error } = await supabase
-        .from('meal_plans')
+        .from('recipes')
         .delete()
         .eq('id', planToDelete.recipeId);
 
@@ -132,21 +132,40 @@ ${recipe.instructions}
 
   const savePlan = async (id: string) => {
     const planToSave = generatedPlans.find(plan => plan.id === id);
-    if (!planToSave || !planToSave.recipeId) return;
+    if (!planToSave) return;
 
     try {
-      const { error } = await supabase
+      // First, save the meal plan as a recipe
+      const { data: recipeData, error: recipeError } = await supabase
+        .from('recipes')
+        .insert({
+          title: planToSave.title,
+          ingredients: [], // We'll need to parse these from the plan text
+          instructions: planToSave.plan,
+          user_id: profile?.id,
+          is_public: false
+        })
+        .select()
+        .single();
+
+      if (recipeError) throw recipeError;
+
+      // Then, save to favorites using the new recipe ID
+      const { error: favoriteError } = await supabase
         .from('favorites')
         .upsert({
           user_id: profile?.id,
-          recipe_id: planToSave.recipeId,
+          recipe_id: recipeData.id,
         });
 
-      if (error) throw error;
+      if (favoriteError) throw favoriteError;
 
+      // Update the local state with the new recipe ID and favorite status
       setGeneratedPlans(prev =>
         prev.map(plan =>
-          plan.id === id ? { ...plan, isFavorited: !plan.isFavorited } : plan
+          plan.id === id 
+            ? { ...plan, recipeId: recipeData.id, isFavorited: !plan.isFavorited } 
+            : plan
         )
       );
 
