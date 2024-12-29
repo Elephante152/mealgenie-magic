@@ -52,10 +52,10 @@ serve(async (req) => {
     console.log('Sending request to OpenAI')
     const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
-      headers: {
+      headers: new Headers({
         'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json'
-      },
+      }),
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: [
@@ -133,10 +133,10 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ mealPlan: createdPlan, recipes }),
       { 
-        headers: { 
+        headers: new Headers({
           ...corsHeaders,
           'Content-Type': 'application/json'
-        } 
+        })
       }
     )
   } catch (error) {
@@ -145,10 +145,10 @@ serve(async (req) => {
       JSON.stringify({ error: 'An unexpected error occurred', details: error.message }),
       { 
         status: 500,
-        headers: { 
+        headers: new Headers({
           ...corsHeaders,
           'Content-Type': 'application/json'
-        } 
+        })
       }
     )
   }
