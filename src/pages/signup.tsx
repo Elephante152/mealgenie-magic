@@ -14,14 +14,11 @@ export default function SignUp() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Listen for auth state changes
   supabase.auth.onAuthStateChange(async (event, session) => {
     if (event === "SIGNED_IN") {
       setLoading(true);
       try {
-        // Check if the user's email is verified
         if (session?.user?.email_confirmed_at) {
-          // Check if user has completed onboarding
           const { data: profile, error } = await supabase
             .from('profiles')
             .select('preferences')
@@ -30,7 +27,6 @@ export default function SignUp() {
 
           if (error) throw error;
 
-          // Safely transform the preferences data with type checking
           const rawPreferences = profile?.preferences as Record<string, unknown>;
           const hasCompletedOnboarding = 
             typeof rawPreferences?.diet === 'string' &&
@@ -108,8 +104,8 @@ export default function SignUp() {
             variables: {
               default: {
                 colors: {
-                  brand: 'rgb(var(--primary))',
-                  brandAccent: 'rgb(var(--primary))',
+                  brand: '#10B981',
+                  brandAccent: '#059669',
                 },
               },
             },
@@ -121,7 +117,7 @@ export default function SignUp() {
           }}
           view="sign_up"
           providers={["google"]}
-          redirectTo={`${window.location.origin}/dashboard`}
+          redirectTo={window.location.origin + "/dashboard"}
           localization={{
             variables: {
               sign_up: {

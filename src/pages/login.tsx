@@ -20,7 +20,6 @@ export default function Login() {
       }
 
       try {
-        // Check if user has completed onboarding by checking their preferences
         const { data: profile, error } = await supabase
           .from('profiles')
           .select('preferences')
@@ -29,7 +28,6 @@ export default function Login() {
 
         if (error) throw error;
 
-        // Safely transform the preferences data with type checking
         const rawPreferences = profile?.preferences as Record<string, unknown>;
         const hasCompletedOnboarding = 
           typeof rawPreferences?.diet === 'string' &&
@@ -40,8 +38,6 @@ export default function Login() {
           typeof rawPreferences?.mealsPerDay === 'number' &&
           Array.isArray(rawPreferences?.cookingTools);
 
-        // If user has completed onboarding (has valid preferences), redirect to dashboard
-        // Otherwise, send them to onboarding
         if (hasCompletedOnboarding) {
           toast({
             title: "Welcome back!",
@@ -103,7 +99,7 @@ export default function Login() {
             },
           }}
           providers={["google"]}
-          redirectTo={`${window.location.origin}/dashboard`}
+          redirectTo={window.location.origin + "/dashboard"}
           onlyThirdPartyProviders={false}
         />
       </Card>
