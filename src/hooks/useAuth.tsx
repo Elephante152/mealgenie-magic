@@ -10,6 +10,7 @@ export interface UserPreferences {
   calorieIntake: number;
   mealsPerDay: number;
   cookingTools: string[];
+  credits: number; // Added credits property
 }
 
 export interface UserProfile {
@@ -77,7 +78,8 @@ export function useAuth() {
             activityLevel: (rawPreferences?.activityLevel as string) || 'Moderately Active',
             calorieIntake: Number(rawPreferences?.calorieIntake) || 2000,
             mealsPerDay: Number(rawPreferences?.mealsPerDay) || 3,
-            cookingTools: Array.isArray(rawPreferences?.cookingTools) ? rawPreferences.cookingTools : []
+            cookingTools: Array.isArray(rawPreferences?.cookingTools) ? rawPreferences.cookingTools : [],
+            credits: Number(rawPreferences?.credits) || 100 // Added default value for credits
           }
         };
         setProfile(transformedProfile);
