@@ -59,16 +59,10 @@ export const PreferencesForm = ({ onSubmit, isLoading }: PreferencesFormProps) =
           <Utensils className="w-5 h-5 mr-2" />
           Diet Type
         </Label>
-        <div className="grid grid-cols-2 gap-4">
+        <RadioGroup value={dietType} onValueChange={setDietType} className="grid grid-cols-2 gap-4">
           {DIET_TYPES.map(diet => (
             <div key={diet} className="relative">
-              <RadioGroupItem
-                value={diet}
-                id={diet}
-                className="peer sr-only"
-                checked={dietType === diet}
-                onClick={() => setDietType(diet)}
-              />
+              <RadioGroupItem value={diet} id={diet} className="peer sr-only" />
               <Label
                 htmlFor={diet}
                 className={`flex items-center justify-center px-4 py-3 bg-white border-2 rounded-xl cursor-pointer transition-all duration-200 ${
@@ -81,7 +75,7 @@ export const PreferencesForm = ({ onSubmit, isLoading }: PreferencesFormProps) =
               </Label>
             </div>
           ))}
-        </div>
+        </RadioGroup>
       </div>
 
       <div className="space-y-4">
@@ -89,16 +83,10 @@ export const PreferencesForm = ({ onSubmit, isLoading }: PreferencesFormProps) =
           <Activity className="w-5 h-5 mr-2" />
           Activity Level
         </Label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <RadioGroup value={activityLevel} onValueChange={setActivityLevel} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {ACTIVITY_LEVELS.map(level => (
             <div key={level} className="relative">
-              <RadioGroupItem
-                value={level}
-                id={level}
-                className="peer sr-only"
-                checked={activityLevel === level}
-                onClick={() => setActivityLevel(level)}
-              />
+              <RadioGroupItem value={level} id={level} className="peer sr-only" />
               <Label
                 htmlFor={level}
                 className={`flex items-center justify-center px-4 py-3 bg-white border-2 rounded-xl cursor-pointer transition-all duration-200 ${
@@ -111,7 +99,7 @@ export const PreferencesForm = ({ onSubmit, isLoading }: PreferencesFormProps) =
               </Label>
             </div>
           ))}
-        </div>
+        </RadioGroup>
       </div>
 
       <div className="space-y-2">
