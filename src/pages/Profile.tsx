@@ -1,19 +1,29 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { PreferencesForm } from "@/components/onboarding/PreferencesForm";
 import { AnimatedGradientText } from "@/components/ui/animated-gradient-text";
+import type { UserPreferences } from "@/types/user";
+
+interface ProfilePreferences {
+  dietType: string;
+  favoriteCuisines: string[];
+  allergies: string;
+  activityLevel: string;
+  calorieIntake: number;
+  mealsPerDay: number;
+  preferredCookingTools: string[];
+}
 
 export default function Profile() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [preferences, setPreferences] = useState<any>(null);
+  const [preferences, setPreferences] = useState<ProfilePreferences | null>(null);
 
   useEffect(() => {
     const fetchUserPreferences = async () => {
@@ -34,14 +44,15 @@ export default function Profile() {
         if (error) throw error;
 
         if (profile?.preferences) {
+          const userPrefs = profile.preferences as UserPreferences;
           setPreferences({
-            dietType: profile.preferences.diet,
-            favoriteCuisines: profile.preferences.cuisines || [],
-            allergies: (profile.preferences.allergies || []).join(', '),
-            activityLevel: profile.preferences.activityLevel || 'Moderately Active',
-            calorieIntake: profile.preferences.calorieIntake || 2000,
-            mealsPerDay: profile.preferences.mealsPerDay || 3,
-            preferredCookingTools: profile.preferences.cookingTools || [],
+            dietType: userPrefs.diet,
+            favoriteCuisines: userPrefs.cuisines || [],
+            allergies: (userPrefs.allergies || []).join(', '),
+            activityLevel: userPrefs.activityLevel || 'Moderately Active',
+            calorieIntake: userPrefs.calorieIntake || 2000,
+            mealsPerDay: userPrefs.mealsPerDay || 3,
+            preferredCookingTools: userPrefs.cookingTools || [],
           });
         }
 
@@ -59,7 +70,7 @@ export default function Profile() {
     fetchUserPreferences();
   }, [navigate, toast]);
 
-  const handleSubmit = async (updatedPreferences: any) => {
+  const handleSubmit = async (updatedPreferences: ProfilePreferences) => {
     setSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -74,12 +85,12 @@ export default function Profile() {
           preferences: {
             diet: updatedPreferences.dietType.toLowerCase(),
             cuisines: updatedPreferences.favoriteCuisines,
-            allergies: updatedPreferences.allergies.split(',').map((a: string) => a.trim()),
+            allergies: updatedPreferences.allergies.split(',').map(a => a.trim()),
             activityLevel: updatedPreferences.activityLevel,
             calorieIntake: updatedPreferences.calorieIntake,
             mealsPerDay: updatedPreferences.mealsPerDay,
             cookingTools: updatedPreferences.preferredCookingTools,
-          },
+          } as UserPreferences,
         })
         .eq("id", user.id);
 
