@@ -11,32 +11,38 @@ const corsHeaders = {
 const generateMealPlanWithAI = async (preferences: any, additionalRequirements: string) => {
   const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
   if (!openAIApiKey) {
+    console.error('OpenAI API key not configured');
     throw new Error('OpenAI API key not configured');
   }
 
-  console.log('Generating meal plan with preferences:', preferences);
+  console.log('Generating meal plan with preferences:', JSON.stringify(preferences));
   console.log('Additional requirements:', additionalRequirements);
 
-  const openai = new OpenAI({
-    apiKey: openAIApiKey,
-  });
+  try {
+    const openai = new OpenAI({
+      apiKey: openAIApiKey,
+    });
 
-  const systemPrompt = `You are a professional nutritionist and meal planner. Create a detailed meal plan that follows these guidelines:
+    const systemPrompt = `You are a professional nutritionist and meal planner. Create a detailed meal plan that follows these guidelines:
 - Consider dietary restrictions: ${preferences?.diet || 'None'}
 - Avoid allergens: ${preferences?.allergies?.join(', ') || 'None'}
 - Preferred cuisines: ${preferences?.cuisines?.join(', ') || 'Any'}
-- Meals per day: ${preferences?.parameters?.mealsPerDay || 3}
-- Days in plan: ${preferences?.parameters?.numDays || 7}
-- Target calories per day: ${preferences?.parameters?.caloricTarget || 2000}
+- Meals per day: ${preferences?.mealsPerDay || 3}
+- Target calories per day: ${preferences?.calorieIntake || 2000}
 ${additionalRequirements ? `Additional requirements: ${additionalRequirements}` : ''}
 
-For each meal, provide:
-1. Recipe name
-2. List of ingredients with quantities
-3. Step-by-step cooking instructions
-4. Approximate calories`;
+Return the response in this exact JSON format:
+{
+  "plan_name": "Name of the meal plan",
+  "recipes": [
+    {
+      "title": "Recipe name",
+      "ingredients": ["ingredient 1", "ingredient 2"],
+      "instructions": "Step by step instructions"
+    }
+  ]
+}`;
 
-  try {
     console.log('Sending request to OpenAI with system prompt:', systemPrompt);
     
     const completion = await openai.chat.completions.create({
@@ -50,19 +56,18 @@ For each meal, provide:
     });
 
     const response = completion.choices[0].message.content;
-    console.log('OpenAI response:', response);
+    console.log('OpenAI response received');
     
     let mealPlanContent;
     try {
       mealPlanContent = JSON.parse(response);
-      console.log('Successfully parsed meal plan:', mealPlanContent);
+      console.log('Successfully parsed meal plan');
+      return mealPlanContent;
     } catch (parseError) {
       console.error('Error parsing OpenAI response:', parseError);
       console.log('Raw response content:', response);
       throw new Error('Failed to parse meal plan response');
     }
-    
-    return mealPlanContent;
   } catch (error) {
     console.error('Error generating meal plan with OpenAI:', error);
     throw error;
@@ -89,6 +94,7 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
     if (!supabaseUrl || !supabaseKey) {
+      console.error('Missing Supabase configuration');
       throw new Error('Missing Supabase configuration');
     }
 
