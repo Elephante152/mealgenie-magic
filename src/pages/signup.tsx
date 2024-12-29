@@ -5,11 +5,12 @@ import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function SignUp() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Listen for auth state changes
   supabase.auth.onAuthStateChange((event, session) => {
@@ -22,8 +23,19 @@ export default function SignUp() {
     }
   });
 
-  const handleAuthError = (error: Error) => {
-    const errorMessage = JSON.parse(error.message)?.message || "An error occurred during signup";
+  const handleError = (error: any) => {
+    let errorMessage = "An error occurred during signup";
+    
+    try {
+      // Try to parse the error message if it's JSON
+      const parsedError = typeof error.message === 'string' ? JSON.parse(error.message) : error;
+      errorMessage = parsedError.message || errorMessage;
+    } catch (e) {
+      // If parsing fails, use the original error message
+      errorMessage = error.message || errorMessage;
+    }
+    
+    setError(errorMessage);
     toast({
       variant: "destructive",
       title: "Error",
@@ -49,6 +61,12 @@ export default function SignUp() {
           </p>
         </div>
 
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
         <Auth
           supabaseClient={supabase}
           appearance={{
@@ -66,7 +84,14 @@ export default function SignUp() {
           showLinks={true}
           providers={[]}
           redirectTo={`${window.location.origin}/onboarding`}
-          onError={handleAuthError}
+          localization={{
+            variables: {
+              sign_up: {
+                password_input_placeholder: "Password (min. 6 characters)",
+                email_input_placeholder: "Your email address",
+              },
+            },
+          }}
         />
       </Card>
     </div>
