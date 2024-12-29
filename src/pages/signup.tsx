@@ -34,12 +34,9 @@ export default function SignUp() {
 
           if (profile) {
             const hasCompletedOnboarding = hasCompletedPreferences(profile.preferences);
-
-            if (hasCompletedOnboarding) {
-              navigate("/dashboard");
-            } else {
-              navigate("/onboarding");
-            }
+            
+            // Always redirect to onboarding for new signups
+            navigate("/onboarding");
           }
         }
       } catch (error) {
@@ -79,13 +76,8 @@ export default function SignUp() {
               description: "Your account has been created successfully.",
             });
 
-            const hasCompletedOnboarding = hasCompletedPreferences(profile.preferences);
-
-            if (hasCompletedOnboarding) {
-              navigate("/dashboard");
-            } else {
-              navigate("/onboarding");
-            }
+            // For new sign-ups, always redirect to onboarding
+            navigate("/onboarding");
           }
         } catch (error) {
           console.error("Error during sign up:", error);
@@ -149,7 +141,7 @@ export default function SignUp() {
           }}
           view="sign_up"
           providers={["google"]}
-          redirectTo={`${window.location.origin}/dashboard`}
+          redirectTo={`${window.location.origin}/onboarding`}
           onlyThirdPartyProviders={true}
         />
       </Card>

@@ -1,16 +1,18 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
 import { hasCompletedPreferences } from "@/utils/preferences";
 
 export default function Login() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -32,7 +34,8 @@ export default function Login() {
 
           if (profile) {
             const hasCompletedOnboarding = hasCompletedPreferences(profile.preferences);
-
+            
+            // For login, check if onboarding is completed
             if (hasCompletedOnboarding) {
               navigate("/dashboard");
             } else {
@@ -42,18 +45,14 @@ export default function Login() {
         }
       } catch (error) {
         console.error("Error checking session:", error);
-        toast({
-          title: "Error",
-          description: "There was a problem checking your session. Please try again.",
-          variant: "destructive",
-        });
+        setError("There was a problem checking your session. Please try again.");
       } finally {
         setIsLoading(false);
       }
     };
 
     checkSession();
-  }, [navigate, toast]);
+  }, [navigate]);
 
   useEffect(() => {
     const {
@@ -76,13 +75,14 @@ export default function Login() {
           }
 
           if (profile) {
+            const hasCompletedOnboarding = hasCompletedPreferences(profile.preferences);
+            
             toast({
-              title: "Welcome!",
-              description: `Signed in as ${session.user.email}`,
+              title: "Welcome back!",
+              description: "You have successfully signed in.",
             });
 
-            const hasCompletedOnboarding = hasCompletedPreferences(profile.preferences);
-
+            // For login, check if onboarding is completed
             if (hasCompletedOnboarding) {
               navigate("/dashboard");
             } else {
@@ -90,12 +90,8 @@ export default function Login() {
             }
           }
         } catch (error) {
-          console.error("Error during sign in:", error);
-          toast({
-            title: "Error",
-            description: "There was a problem signing you in. Please try again.",
-            variant: "destructive",
-          });
+          console.error("Error during login:", error);
+          setError("There was a problem signing in. Please try again.");
         }
       }
     });
@@ -113,7 +109,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md p-6 space-y-6 bg-white">
+      <Card className="w-full max-w-md p-6 space-y-6 bg-white relative">
         <div className="text-center">
           <h2 className="text-3xl font-bold tracking-tight text-gray-900">
             Sign in to your account
@@ -128,6 +124,12 @@ export default function Login() {
             </button>
           </p>
         </div>
+
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
         <Auth
           supabaseClient={supabase}
@@ -147,6 +149,7 @@ export default function Login() {
               divider: 'my-4',
             },
           }}
+          view="sign_in"
           providers={["google"]}
           redirectTo={`${window.location.origin}/dashboard`}
           onlyThirdPartyProviders={true}
