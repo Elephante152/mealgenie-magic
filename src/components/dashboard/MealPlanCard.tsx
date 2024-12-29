@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { X, Minimize2, Maximize2, Save, RefreshCw } from 'lucide-react'
+import { X, Minimize2, Maximize2, Save, RefreshCw, Star } from 'lucide-react'
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 
@@ -9,6 +9,7 @@ interface MealPlan {
   plan: string
   isMinimized: boolean
   recipeId?: string
+  isFavorited?: boolean
 }
 
 interface MealPlanCardProps {
@@ -73,10 +74,14 @@ export const MealPlanCard = ({
           <div className="flex justify-end space-x-2">
             <button 
               onClick={() => onSave(plan.id)}
-              className="p-2 rounded-lg text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 transition-colors"
-              aria-label="Save plan"
+              className={`p-2 rounded-lg ${
+                plan.isFavorited 
+                  ? 'text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50' 
+                  : 'text-gray-400 hover:text-gray-500 hover:bg-gray-50'
+              } transition-colors`}
+              aria-label={plan.isFavorited ? "Remove from favorites" : "Add to favorites"}
             >
-              <Save className="w-5 h-5" />
+              <Star className="w-5 h-5" fill={plan.isFavorited ? "currentColor" : "none"} />
             </button>
             <button 
               onClick={() => onRegenerate(plan.id)}

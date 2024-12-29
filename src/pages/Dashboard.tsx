@@ -35,11 +35,12 @@ import { GenerateButton } from '@/components/dashboard/GenerateButton'
 import { MealPlanCard } from '@/components/dashboard/MealPlanCard'
 
 interface MealPlan {
-  id: string // Changed from number to string
+  id: string
   title: string
   plan: string
   isMinimized: boolean
-  recipeId?: string // Added to store the Supabase recipe ID
+  recipeId?: string
+  isFavorited?: boolean
 }
 
 export default function Dashboard() {
@@ -48,54 +49,19 @@ export default function Dashboard() {
   const [mealPlanText, setMealPlanText] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [generatedPlans, setGeneratedPlans] = useState<MealPlan[]>([])
-  const [credits, setCredits] = useState(100)
+  const [credits, setCredits] = useState(profile?.preferences?.credits || 100)
   const [isNavOpen, setIsNavOpen] = useState(false)
-
-  const triggerConfetti = () => {
-    const count = 200
-    const defaults = {
-      origin: { y: 0.7 },
-      zIndex: 100
-    }
-
-    function fire(particleRatio: number, opts: confetti.Options) {
-      confetti({
-        ...defaults,
-        ...opts,
-        particleCount: Math.floor(count * particleRatio)
-      })
-    }
-
-    fire(0.25, {
-      spread: 26,
-      startVelocity: 55,
-    })
-
-    fire(0.2, {
-      spread: 60,
-    })
-
-    fire(0.35, {
-      spread: 100,
-      decay: 0.91,
-      scalar: 0.8
-    })
-
-    fire(0.1, {
-      spread: 120,
-      startVelocity: 25,
-      decay: 0.92,
-      scalar: 1.2
-    })
-
-    fire(0.1, {
-      spread: 120,
-      startVelocity: 45,
-    })
-  }
 
   const handleGenerate = useCallback(async () => {
     if (isLoading) return
+    if (credits < 10) {
+      toast({
+        title: "Insufficient Credits",
+        description: "Please refill your credits to generate more meal plans.",
+        variant: "destructive",
+      })
+      return
+    }
 
     setIsLoading(true)
     try {
@@ -110,7 +76,7 @@ export default function Dashboard() {
 
       const { data } = response
       setGeneratedPlans(prev => [...prev, {
-        id: crypto.randomUUID(), // Using UUID instead of Date.now()
+        id: crypto.randomUUID(),
         title: data.mealPlan.plan_name,
         plan: data.recipes.map((recipe: any) => `
 Recipe: ${recipe.title}
@@ -122,9 +88,24 @@ Instructions:
 ${recipe.instructions}
         `).join('\n\n'),
         isMinimized: false,
-        recipeId: data.mealPlan.id // Store the Supabase recipe ID
+        recipeId: data.mealPlan.id,
+        isFavorited: false
       }])
 
+      // Update user credits
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ 
+          preferences: {
+            ...profile?.preferences,
+            credits: (profile?.preferences?.credits || 0) - 10
+          }
+        })
+        .eq('id', profile?.id)
+
+      if (updateError) throw updateError
+
+      setCredits(prev => prev - 10)
       triggerConfetti()
       toast({
         title: "Success!",
@@ -140,7 +121,7 @@ ${recipe.instructions}
     } finally {
       setIsLoading(false)
     }
-  }, [mealPlanText, profile?.preferences, isLoading, toast])
+  }, [mealPlanText, profile?.preferences, isLoading, credits, toast])
 
   const toggleMinimize = (id: string) => {
     setGeneratedPlans(prev =>
@@ -161,29 +142,46 @@ ${recipe.instructions}
     try {
       const { error } = await supabase
         .from('favorites')
-        .insert({
+        .upsert({
           user_id: profile?.id,
-          recipe_id: planToSave.recipeId, // Using the Supabase recipe ID
+          recipe_id: planToSave.recipeId,
         })
 
       if (error) throw error
 
+      setGeneratedPlans(prev =>
+        prev.map(plan =>
+          plan.id === id ? { ...plan, isFavorited: !plan.isFavorited } : plan
+        )
+      )
+
       toast({
-        title: "Saved!",
-        description: "Meal plan has been saved to your favorites.",
+        title: planToSave.isFavorited ? "Removed from favorites" : "Added to favorites",
+        description: planToSave.isFavorited 
+          ? "The meal plan has been removed from your favorites."
+          : "The meal plan has been saved to your favorites.",
       })
     } catch (error) {
       console.error('Save error:', error)
       toast({
         title: "Error",
-        description: "Failed to save meal plan. Please try again.",
+        description: "Failed to update favorites. Please try again.",
         variant: "destructive",
       })
     }
   }
 
-  const regeneratePlan = (id: string) => {
-    handleGenerate()
+  const regeneratePlan = async (id: string) => {
+    if (credits < 10) {
+      toast({
+        title: "Insufficient Credits",
+        description: "Please refill your credits to regenerate meal plans.",
+        variant: "destructive",
+      })
+      return
+    }
+    
+    await handleGenerate()
     closePlan(id)
   }
 
