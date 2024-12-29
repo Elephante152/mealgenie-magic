@@ -1,67 +1,96 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import "https://deno.land/x/xhr@0.1.0/mod.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Mock data generator function
-const generateMockMealPlan = (preferences: any, additionalRequirements: string) => {
-  console.log('Generating mock meal plan with preferences:', preferences);
-  console.log('Additional requirements:', additionalRequirements);
-  
-  // Mock recipe data
-  const mockRecipes = [
-    {
-      title: "Healthy Grilled Chicken Salad",
-      ingredients: [
-        "2 chicken breasts",
-        "200g mixed salad greens",
-        "100g cherry tomatoes",
-        "2 tbsp olive oil",
-        "1 tbsp balsamic vinegar"
-      ],
-      instructions: "1. Season chicken breasts with salt and pepper\n2. Grill for 6-8 minutes per side\n3. Let rest for 5 minutes, then slice\n4. Mix greens and tomatoes\n5. Top with chicken\n6. Drizzle with oil and vinegar"
-    },
-    {
-      title: "Quinoa Buddha Bowl",
-      ingredients: [
-        "1 cup quinoa",
-        "1 can chickpeas",
-        "1 sweet potato",
-        "2 cups kale",
-        "2 tbsp tahini"
-      ],
-      instructions: "1. Cook quinoa according to package instructions\n2. Roast chickpeas and diced sweet potato\n3. Massage kale with olive oil\n4. Assemble bowl with quinoa base\n5. Top with roasted vegetables and drizzle tahini"
-    }
-  ];
+const generateMealPlanWithAI = async (preferences: any, additionalRequirements: string) => {
+  const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+  if (!openAIApiKey) {
+    throw new Error('OpenAI API key not configured');
+  }
 
-  return {
-    plan_name: `Custom ${preferences?.diet || 'Balanced'} Meal Plan`,
-    recipes: mockRecipes
-  };
+  console.log('Generating meal plan with preferences:', preferences);
+  console.log('Additional requirements:', additionalRequirements);
+
+  const systemPrompt = `You are a professional nutritionist and meal planner. Create a detailed meal plan that follows these guidelines:
+- Consider dietary restrictions: ${preferences?.diet || 'None'}
+- Avoid allergens: ${preferences?.allergies?.join(', ') || 'None'}
+- Preferred cuisines: ${preferences?.cuisines?.join(', ') || 'Any'}
+- Meals per day: ${preferences?.parameters?.mealsPerDay || 3}
+- Days in plan: ${preferences?.parameters?.numDays || 7}
+- Target calories per day: ${preferences?.parameters?.caloricTarget || 2000}
+${additionalRequirements ? `Additional requirements: ${additionalRequirements}` : ''}
+
+For each meal, provide:
+1. Recipe name
+2. List of ingredients with quantities
+3. Step-by-step cooking instructions
+4. Approximate calories
+
+Format the response as a JSON object with this structure:
+{
+  "plan_name": "Custom name based on preferences",
+  "recipes": [
+    {
+      "title": "Recipe name",
+      "ingredients": ["ingredient 1", "ingredient 2"],
+      "instructions": "Step by step instructions",
+      "calories": number
+    }
+  ]
+}`;
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: 'Generate a meal plan based on the above preferences.' }
+        ],
+        temperature: 0.7,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to generate meal plan with OpenAI');
+    }
+
+    const data = await response.json();
+    const mealPlanContent = JSON.parse(data.choices[0].message.content);
+    console.log('Generated meal plan:', mealPlanContent);
+    
+    return mealPlanContent;
+  } catch (error) {
+    console.error('Error generating meal plan with OpenAI:', error);
+    throw error;
+  }
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Get the JWT token from the request headers
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       throw new Error('No authorization header');
     }
 
-    // Create Supabase client using environment variables
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get the user's ID from the JWT token
     const jwt = authHeader.replace('Bearer ', '');
     const { data: { user }, error: userError } = await supabase.auth.getUser(jwt);
     
@@ -73,11 +102,11 @@ serve(async (req) => {
     console.log('Received request with preferences:', preferences);
     console.log('Additional requirements:', additionalRequirements);
 
-    // Generate mock meal plan
-    const mockPlan = generateMockMealPlan(preferences, additionalRequirements);
+    // Generate meal plan using OpenAI
+    const mealPlan = await generateMealPlanWithAI(preferences, additionalRequirements);
 
     // Store recipes in Supabase
-    const recipes = await Promise.all(mockPlan.recipes.map(async (recipe) => {
+    const recipes = await Promise.all(mealPlan.recipes.map(async (recipe) => {
       const { data, error } = await supabase
         .from('recipes')
         .insert({
@@ -97,11 +126,11 @@ serve(async (req) => {
       return data;
     }));
 
-    // Create meal plan entry with user_id
-    const { data: mealPlan, error: planError } = await supabase
+    // Create meal plan entry
+    const { data: storedMealPlan, error: planError } = await supabase
       .from('meal_plans')
       .insert({
-        plan_name: mockPlan.plan_name,
+        plan_name: mealPlan.plan_name,
         recipes: recipes.map(r => r.id),
         user_id: user.id
       })
@@ -114,7 +143,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ mealPlan, recipes: mockPlan.recipes }),
+      JSON.stringify({ mealPlan: storedMealPlan, recipes: mealPlan.recipes }),
       { 
         headers: {
           ...corsHeaders,
