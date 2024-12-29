@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { MealPlanDisplay } from '@/components/dashboard/MealPlanDisplay';
 import { MealPlansHeader } from '@/components/dashboard/MealPlansHeader';
 import type { MealPlan } from '@/types/user';
-import type { TablesRow } from '@/integrations/supabase/types';
+import type { Tables } from '@/integrations/supabase/types';
 
 const MealPlans = () => {
   const { toast } = useToast();
@@ -28,7 +28,7 @@ const MealPlans = () => {
         return [];
       }
 
-      return (data as TablesRow<'meal_plans'>[]).map((plan): MealPlan => {
+      return (data as Tables['meal_plans']['Row'][]).map((plan): MealPlan => {
         let parsedPlan;
         try {
           parsedPlan = typeof plan.recipes === 'string' ? JSON.parse(plan.recipes) : plan.recipes;

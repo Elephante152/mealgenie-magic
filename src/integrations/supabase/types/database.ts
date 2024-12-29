@@ -1,6 +1,6 @@
 import type { Tables } from './tables';
 
-export type Database = {
+export interface Database {
   public: {
     Tables: {
       favorites: Tables['favorites'];
@@ -24,4 +24,4 @@ export type Database = {
       [_ in never]: never;
     };
   };
-};
+}
