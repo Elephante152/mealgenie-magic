@@ -6,46 +6,53 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2 } from "lucide-react";
 
 export default function SignUp() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   // Listen for auth state changes
-  supabase.auth.onAuthStateChange((event, session) => {
+  supabase.auth.onAuthStateChange(async (event, session) => {
+    console.log("Auth event:", event);
     if (event === "SIGNED_IN") {
-      toast({
-        title: "Welcome!",
-        description: "You have successfully signed up.",
-      });
-      navigate("/onboarding");
+      setLoading(true);
+      try {
+        // Check if the user's email is verified
+        if (session?.user?.email_confirmed_at) {
+          toast({
+            title: "Welcome!",
+            description: "Your account has been created successfully.",
+          });
+          navigate("/onboarding");
+        } else {
+          toast({
+            title: "Please verify your email",
+            description: "Check your inbox for a verification link.",
+          });
+        }
+      } catch (error) {
+        console.error("Error during signup:", error);
+        setError("An unexpected error occurred during signup.");
+      } finally {
+        setLoading(false);
+      }
+    } else if (event === "SIGNED_OUT") {
+      setLoading(false);
     }
   });
 
-  const handleError = (error: any) => {
-    let errorMessage = "An error occurred during signup";
-    
-    try {
-      // Try to parse the error message if it's JSON
-      const parsedError = typeof error.message === 'string' ? JSON.parse(error.message) : error;
-      errorMessage = parsedError.message || errorMessage;
-    } catch (e) {
-      // If parsing fails, use the original error message
-      errorMessage = error.message || errorMessage;
-    }
-    
-    setError(errorMessage);
-    toast({
-      variant: "destructive",
-      title: "Error",
-      description: errorMessage,
-    });
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md p-6 space-y-6 bg-white">
+      <Card className="w-full max-w-md p-6 space-y-6 bg-white relative">
+        {loading && (
+          <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-50">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        )}
+        
         <div className="text-center">
           <h2 className="text-3xl font-bold tracking-tight text-gray-900">
             Create your account
@@ -62,7 +69,7 @@ export default function SignUp() {
         </div>
 
         {error && (
-          <Alert variant="destructive" className="mb-4">
+          <Alert variant="destructive">
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
@@ -79,16 +86,24 @@ export default function SignUp() {
                 },
               },
             },
+            className: {
+              container: 'space-y-4',
+              button: 'w-full px-4 py-2 rounded',
+              divider: 'my-4',
+            },
           }}
           view="sign_up"
-          showLinks={true}
           providers={["google"]}
           redirectTo={`${window.location.origin}/onboarding`}
           localization={{
             variables: {
               sign_up: {
-                password_input_placeholder: "Password (min. 6 characters)",
-                email_input_placeholder: "Your email address",
+                email_label: "Email address",
+                password_label: "Create a password",
+                email_input_placeholder: "Enter your email",
+                password_input_placeholder: "Create a secure password",
+                button_label: "Create account",
+                social_provider_text: "Continue with {{provider}}",
               },
             },
           }}

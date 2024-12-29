@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 const DIETS = ["omnivore", "vegetarian", "vegan", "pescatarian", "keto", "paleo"];
 const CUISINES = ["Italian", "Mexican", "Indian", "Chinese", "Japanese", "Thai", "Mediterranean", "American"];
@@ -14,11 +16,37 @@ const ALLERGIES = ["dairy", "eggs", "fish", "shellfish", "tree-nuts", "peanuts",
 export default function Onboarding() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [diet, setDiet] = useState("omnivore");
   const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
   const [selectedAllergies, setSelectedAllergies] = useState<string[]>([]);
 
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate("/login");
+        return;
+      }
+      setLoading(false);
+    };
+
+    checkSession();
+  }, [navigate]);
+
+  useEffect(() => {
+    // Calculate progress based on filled fields
+    let points = 0;
+    if (diet) points += 33;
+    if (selectedCuisines.length > 0) points += 33;
+    if (selectedAllergies.length > 0) points += 34;
+    setProgress(points);
+  }, [diet, selectedCuisines, selectedAllergies]);
+
   const handleSubmit = async () => {
+    setSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -40,8 +68,8 @@ export default function Onboarding() {
       if (error) throw error;
 
       toast({
-        title: "Preferences saved!",
-        description: "Your profile has been updated successfully.",
+        title: "Welcome aboard! 🎉",
+        description: "Your preferences have been saved successfully.",
       });
 
       navigate("/");
@@ -52,12 +80,31 @@ export default function Onboarding() {
         description: "Failed to save preferences. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setSaving(false);
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+          <p className="text-gray-600">Setting up your profile...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md p-6 space-y-6 bg-white">
+      <Card className="w-full max-w-md p-6 space-y-6 bg-white relative">
+        {saving && (
+          <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-50">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        )}
+
         <div className="text-center">
           <h2 className="text-3xl font-bold tracking-tight text-gray-900">
             Welcome! Let's personalize your experience
@@ -66,6 +113,9 @@ export default function Onboarding() {
             Tell us about your dietary preferences
           </p>
         </div>
+
+        <Progress value={progress} className="h-2" />
+        <p className="text-sm text-gray-500 text-center">Profile completion: {progress}%</p>
 
         <div className="space-y-4">
           <div className="space-y-2">
@@ -146,8 +196,19 @@ export default function Onboarding() {
             </div>
           </div>
 
-          <Button className="w-full" onClick={handleSubmit}>
-            Save Preferences
+          <Button 
+            className="w-full" 
+            onClick={handleSubmit}
+            disabled={saving || progress < 33}
+          >
+            {saving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              'Complete Setup'
+            )}
           </Button>
         </div>
       </Card>
