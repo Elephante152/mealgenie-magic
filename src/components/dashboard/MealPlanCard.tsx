@@ -54,8 +54,8 @@ export const MealPlanCard = ({
   }, [])
 
   return (
-    <Dialog defaultOpen={true} onOpenChange={() => onClose(plan.id)} showClose={false}>
-      <DialogContent className="max-w-4xl w-[calc(100%-2rem)] p-0 gap-0 bg-white/95 backdrop-blur-md">
+    <Dialog defaultOpen={true} onOpenChange={() => onClose(plan.id)}>
+      <DialogContent className="max-w-4xl w-[calc(100%-2rem)] p-0 gap-0 bg-white/95 backdrop-blur-md" hideCloseButton>
         <DialogHeader className="p-6 pb-2">
           <div className="flex justify-between items-center">
             <DialogTitle className="text-xl font-semibold bg-gradient-to-r from-emerald-600 to-emerald-400 bg-clip-text text-transparent">
