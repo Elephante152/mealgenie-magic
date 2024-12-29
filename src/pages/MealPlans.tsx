@@ -28,7 +28,7 @@ const MealPlans = () => {
         return [];
       }
 
-      return (data as Tables['meal_plans']['Row'][]).map((plan): MealPlan => {
+      return (data as Tables<'meal_plans'>['Row'][]).map((plan): MealPlan => {
         let parsedPlan;
         try {
           parsedPlan = typeof plan.recipes === 'string' ? JSON.parse(plan.recipes) : plan.recipes;
