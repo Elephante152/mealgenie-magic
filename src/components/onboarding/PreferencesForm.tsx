@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Utensils, AlertTriangle, Globe, Activity, BarChart, Coffee, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,16 +16,37 @@ const COOKING_TOOLS = ['Stove top', 'Oven', 'Microwave', 'Slow cooker', 'Pressur
 interface PreferencesFormProps {
   onSubmit: (preferences: any) => void;
   isLoading?: boolean;
+  initialValues?: {
+    dietType: string;
+    allergies: string;
+    favoriteCuisines: string[];
+    activityLevel: string;
+    calorieIntake: number;
+    mealsPerDay: number;
+    preferredCookingTools: string[];
+  };
 }
 
-export const PreferencesForm = ({ onSubmit, isLoading }: PreferencesFormProps) => {
-  const [dietType, setDietType] = useState('Omnivore');
-  const [allergies, setAllergies] = useState('');
-  const [favoriteCuisines, setFavoriteCuisines] = useState<string[]>([]);
-  const [activityLevel, setActivityLevel] = useState('Moderately Active');
-  const [calorieIntake, setCalorieIntake] = useState(2000);
-  const [mealsPerDay, setMealsPerDay] = useState(3);
-  const [preferredCookingTools, setPreferredCookingTools] = useState<string[]>([]);
+export const PreferencesForm = ({ onSubmit, isLoading, initialValues }: PreferencesFormProps) => {
+  const [dietType, setDietType] = useState(initialValues?.dietType || 'Omnivore');
+  const [allergies, setAllergies] = useState(initialValues?.allergies || '');
+  const [favoriteCuisines, setFavoriteCuisines] = useState<string[]>(initialValues?.favoriteCuisines || []);
+  const [activityLevel, setActivityLevel] = useState(initialValues?.activityLevel || 'Moderately Active');
+  const [calorieIntake, setCalorieIntake] = useState(initialValues?.calorieIntake || 2000);
+  const [mealsPerDay, setMealsPerDay] = useState(initialValues?.mealsPerDay || 3);
+  const [preferredCookingTools, setPreferredCookingTools] = useState<string[]>(initialValues?.preferredCookingTools || []);
+
+  useEffect(() => {
+    if (initialValues) {
+      setDietType(initialValues.dietType);
+      setAllergies(initialValues.allergies);
+      setFavoriteCuisines(initialValues.favoriteCuisines);
+      setActivityLevel(initialValues.activityLevel);
+      setCalorieIntake(initialValues.calorieIntake);
+      setMealsPerDay(initialValues.mealsPerDay);
+      setPreferredCookingTools(initialValues.preferredCookingTools);
+    }
+  }, [initialValues]);
 
   const handleCuisineToggle = (cuisine: string) => {
     setFavoriteCuisines(prev =>
