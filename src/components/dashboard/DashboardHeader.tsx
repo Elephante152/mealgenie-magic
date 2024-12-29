@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { Grid, User, Menu, LogOut } from "lucide-react";
+import { useNavigate, Link, useLocation } from "react-router-dom";
+import { User, Menu, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -19,6 +19,7 @@ interface DashboardHeaderProps {
 
 export const DashboardHeader = ({ isNavOpen, setIsNavOpen }: DashboardHeaderProps) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -44,7 +45,6 @@ export const DashboardHeader = ({ isNavOpen, setIsNavOpen }: DashboardHeaderProp
   };
 
   const navItems = [
-    { name: "Dashboard", icon: <Grid className="h-4 w-4" />, path: "/dashboard" },
     { name: "Meal Plans", icon: <Menu className="h-4 w-4" />, path: "/meal-plans" },
     { name: "Profile", icon: <User className="h-4 w-4" />, path: "/profile" },
   ];
@@ -54,7 +54,7 @@ export const DashboardHeader = ({ isNavOpen, setIsNavOpen }: DashboardHeaderProp
       {navItems.map((item) => (
         <Button
           key={item.path}
-          variant="ghost"
+          variant={location.pathname === item.path ? "secondary" : "ghost"}
           size="sm"
           className="flex items-center gap-2"
           asChild
