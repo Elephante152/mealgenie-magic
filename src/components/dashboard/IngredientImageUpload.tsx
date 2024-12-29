@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ChangeEvent } from 'react';
 import { Camera, Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,7 +13,7 @@ export const IngredientImageUpload = ({ onImageUploaded }: IngredientImageUpload
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const handleImageSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageSelect = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       setSelectedImage(file);
@@ -26,7 +26,10 @@ export const IngredientImageUpload = ({ onImageUploaded }: IngredientImageUpload
     input.type = 'file';
     input.accept = 'image/*';
     input.capture = 'environment';
-    input.onchange = (e) => handleImageSelect(e as React.ChangeEvent<HTMLInputElement>);
+    input.onchange = (e) => {
+      const event = e as ChangeEvent<HTMLInputElement>;
+      handleImageSelect(event);
+    };
     input.click();
   };
 
