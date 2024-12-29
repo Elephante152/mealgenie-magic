@@ -18,7 +18,7 @@ export default function SignUp() {
         title: "Welcome!",
         description: "You have successfully signed up.",
       });
-      navigate("/");
+      navigate("/onboarding");
     }
   });
 

@@ -58,7 +58,18 @@ export function useAuth() {
       }
 
       if (data) {
-        setProfile(data as UserProfile);
+        // Transform the data to match UserProfile type
+        const transformedProfile: UserProfile = {
+          id: data.id,
+          email: data.email,
+          role: data.role || 'user',
+          preferences: {
+            diet: data.preferences?.diet || 'omnivore',
+            cuisines: data.preferences?.cuisines || [],
+            allergies: data.preferences?.allergies || []
+          }
+        };
+        setProfile(transformedProfile);
       }
     } catch (error) {
       console.error("Error fetching profile:", error);

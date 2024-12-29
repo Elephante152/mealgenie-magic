@@ -7,6 +7,7 @@ import AuthGuard from "./components/AuthGuard";
 import Index from "./pages/Index";
 import Login from "./pages/login";
 import SignUp from "./pages/signup";
+import Onboarding from "./components/Onboarding";
 
 const queryClient = new QueryClient();
 
@@ -19,6 +20,11 @@ const App = () => (
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />
+          <Route path="/onboarding" element={
+            <AuthGuard>
+              <Onboarding />
+            </AuthGuard>
+          } />
           <Route
             path="/"
             element={
