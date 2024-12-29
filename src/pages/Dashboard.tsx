@@ -19,7 +19,7 @@ export default function Dashboard() {
   const [credits, setCredits] = useState(profile?.preferences?.credits || 100);
   const [isNavOpen, setIsNavOpen] = useState(false);
 
-  const handleGenerate = useCallback(async (mealPlanText: string, parameters?: any) => {
+  const handleGenerate = useCallback(async (mealPlanText: string, imageUrl?: string) => {
     if (isLoading) return;
     if (credits < 10) {
       toast({
@@ -36,7 +36,7 @@ export default function Dashboard() {
         body: {
           preferences: profile?.preferences,
           additionalRequirements: mealPlanText,
-          parameters
+          ingredientImageUrl: imageUrl,
         },
       });
 
@@ -61,7 +61,6 @@ ${recipe.instructions}
         preferences: {
           ...profile?.preferences,
           additionalRequirements: mealPlanText,
-          parameters
         }
       }]);
 

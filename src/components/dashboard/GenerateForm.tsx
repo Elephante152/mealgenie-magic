@@ -9,20 +9,26 @@ import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { GenerateButton } from './GenerateButton';
 import { AnimatedGradientText } from '@/components/landing/AnimatedGradientText';
+import { IngredientImageUpload } from './IngredientImageUpload';
 import type { UserProfile } from '@/types/user';
 
 interface GenerateFormProps {
   profile: UserProfile | null;
   isLoading: boolean;
-  onGenerate: (text: string) => void;
+  onGenerate: (text: string, imageUrl?: string) => void;
 }
 
 export const GenerateForm = ({ profile, isLoading, onGenerate }: GenerateFormProps) => {
   const [mealPlanText, setMealPlanText] = useState('');
+  const [ingredientImageUrl, setIngredientImageUrl] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onGenerate(mealPlanText);
+    onGenerate(mealPlanText, ingredientImageUrl || undefined);
+  };
+
+  const handleImageUploaded = (imageUrl: string) => {
+    setIngredientImageUrl(imageUrl);
   };
 
   return (
@@ -85,8 +91,14 @@ export const GenerateForm = ({ profile, isLoading, onGenerate }: GenerateFormPro
           className="mt-2 h-20 resize-none bg-white/50 backdrop-blur-sm border-gray-200 focus:border-emerald-500 focus:ring focus:ring-emerald-200 transition duration-200"
         />
       </div>
+
+      <div className="bg-white/50 backdrop-blur-sm rounded-lg p-4 border border-gray-200">
+        <Label className="mb-2 block text-gray-700">Add Ingredients from Photo</Label>
+        <IngredientImageUpload onImageUploaded={handleImageUploaded} />
+      </div>
+
       <div className="flex flex-col items-center space-y-4">
-        <GenerateButton onClick={() => onGenerate(mealPlanText)} isLoading={isLoading} />
+        <GenerateButton onClick={() => onGenerate(mealPlanText, ingredientImageUrl || undefined)} isLoading={isLoading} />
         <Dialog>
           <DialogTrigger asChild>
             <button 
