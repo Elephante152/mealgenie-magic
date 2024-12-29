@@ -1,8 +1,8 @@
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Save, RefreshCw, Star, Trash2 } from 'lucide-react'
+import { X, Save, RefreshCw, Star, Trash2, Calendar, Clock, Target } from 'lucide-react'
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useState, useEffect } from 'react'
 import { Badge } from "@/components/ui/badge"
@@ -46,6 +46,7 @@ export const MealPlanCard = ({
 }: MealPlanCardProps) => {
   const { toast } = useToast()
   const [showSuccess, setShowSuccess] = useState(true)
+  const [isRegenerating, setIsRegenerating] = useState(false)
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -54,12 +55,88 @@ export const MealPlanCard = ({
     return () => clearTimeout(timer)
   }, [])
 
-  // Parse the plan content if it's a string
-  const planContent = typeof plan.plan === 'string' ? plan.plan : JSON.stringify(plan.plan, null, 2)
+  const handleRegenerate = async (id: string) => {
+    setIsRegenerating(true)
+    try {
+      await onRegenerate(id)
+      toast({
+        title: "Regenerating meal plan",
+        description: "Your meal plan is being updated with new recipes.",
+      })
+    } catch (error) {
+      toast({
+        title: "Error regenerating meal plan",
+        description: "Please try again later.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsRegenerating(false)
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    try {
+      await onDelete(id)
+      toast({
+        title: "Meal plan deleted",
+        description: "Your meal plan has been removed.",
+      })
+    } catch (error) {
+      toast({
+        title: "Error deleting meal plan",
+        description: "Please try again later.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleSave = async (id: string) => {
+    try {
+      await onSave(id)
+      toast({
+        title: plan.isFavorited ? "Removed from favorites" : "Added to favorites",
+        description: plan.isFavorited 
+          ? "The meal plan has been removed from your favorites."
+          : "The meal plan has been added to your favorites.",
+      })
+    } catch (error) {
+      toast({
+        title: "Error updating favorites",
+        description: "Please try again later.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  // Format the plan content for better readability
+  const formatPlanContent = (content: string) => {
+    return content.split('\n').map((line, index) => {
+      if (line.startsWith('Day')) {
+        return (
+          <div key={index} className="mt-6 mb-3">
+            <h3 className="text-lg font-semibold text-gray-900">{line}</h3>
+          </div>
+        )
+      } else if (line.includes('Breakfast:') || line.includes('Lunch:') || line.includes('Dinner:')) {
+        return (
+          <div key={index} className="mt-4 mb-2">
+            <h4 className="text-md font-medium text-gray-700">{line}</h4>
+          </div>
+        )
+      } else if (line.trim().startsWith('-')) {
+        return (
+          <div key={index} className="ml-4 text-gray-600">
+            {line}
+          </div>
+        )
+      }
+      return <div key={index}>{line}</div>
+    })
+  }
 
   return (
     <Dialog defaultOpen={true} onOpenChange={() => onClose(plan.id)}>
-      <DialogContent className="max-w-4xl w-[calc(100%-2rem)] p-0 gap-0 bg-white/95 backdrop-blur-md [&_.close-button]:hidden">
+      <DialogContent className="max-w-4xl w-[calc(100%-2rem)] p-0 gap-0 bg-white/95 backdrop-blur-md">
         <DialogHeader className="p-6 pb-2">
           <div className="flex justify-between items-center">
             <DialogTitle className="text-xl font-semibold bg-gradient-to-r from-emerald-600 to-emerald-400 bg-clip-text text-transparent">
@@ -69,7 +146,7 @@ export const MealPlanCard = ({
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => onDelete(plan.id)}
+                onClick={() => handleDelete(plan.id)}
                 className="hover:bg-red-50 text-red-500"
                 aria-label="Delete plan"
               >
@@ -78,7 +155,7 @@ export const MealPlanCard = ({
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => onSave(plan.id)}
+                onClick={() => handleSave(plan.id)}
                 className={`${
                   plan.isFavorited 
                     ? 'text-yellow-500 hover:bg-yellow-50' 
@@ -91,11 +168,12 @@ export const MealPlanCard = ({
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => onRegenerate(plan.id)}
+                onClick={() => handleRegenerate(plan.id)}
                 className="text-blue-600 hover:bg-blue-50"
+                disabled={isRegenerating}
                 aria-label="Regenerate plan"
               >
-                <RefreshCw className="w-5 h-5" />
+                <RefreshCw className={`w-5 h-5 ${isRegenerating ? 'animate-spin' : ''}`} />
               </Button>
               <Button
                 variant="ghost"
@@ -108,6 +186,9 @@ export const MealPlanCard = ({
               </Button>
             </div>
           </div>
+          <DialogDescription className="mt-2">
+            Your personalized meal plan based on your preferences
+          </DialogDescription>
           {plan.preferences && (
             <div className="mt-4 space-y-2">
               <div className="flex flex-wrap gap-2">
@@ -127,32 +208,41 @@ export const MealPlanCard = ({
                   </Badge>
                 ))}
               </div>
+              {plan.preferences.parameters && (
+                <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                  {plan.preferences.parameters.mealsPerDay && (
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-4 h-4" />
+                      <span>{plan.preferences.parameters.mealsPerDay} meals/day</span>
+                    </div>
+                  )}
+                  {plan.preferences.parameters.caloricTarget && (
+                    <div className="flex items-center gap-1">
+                      <Target className="w-4 h-4" />
+                      <span>{plan.preferences.parameters.caloricTarget} calories/day</span>
+                    </div>
+                  )}
+                  {plan.preferences.parameters.numDays && (
+                    <div className="flex items-center gap-1">
+                      <Calendar className="w-4 h-4" />
+                      <span>{plan.preferences.parameters.numDays} days</span>
+                    </div>
+                  )}
+                </div>
+              )}
               {plan.preferences.additionalRequirements && (
                 <div className="text-sm text-gray-600">
                   Additional Requirements: {plan.preferences.additionalRequirements}
-                </div>
-              )}
-              {plan.preferences.parameters && (
-                <div className="flex gap-4 text-sm text-gray-600">
-                  {plan.preferences.parameters.mealsPerDay && (
-                    <span>{plan.preferences.parameters.mealsPerDay} meals/day</span>
-                  )}
-                  {plan.preferences.parameters.caloricTarget && (
-                    <span>{plan.preferences.parameters.caloricTarget} calories/day</span>
-                  )}
-                  {plan.preferences.parameters.numDays && (
-                    <span>{plan.preferences.parameters.numDays} days</span>
-                  )}
                 </div>
               )}
             </div>
           )}
         </DialogHeader>
         <ScrollArea className="p-6 pt-2 max-h-[80vh]">
-          <div className="bg-gradient-to-br from-gray-50 to-white rounded-lg border border-gray-100 p-4">
-            <pre className="whitespace-pre-wrap text-sm text-gray-700 leading-relaxed">
-              {planContent}
-            </pre>
+          <div className="bg-gradient-to-br from-gray-50 to-white rounded-lg border border-gray-100 p-6">
+            <div className="space-y-1 text-sm text-gray-700 leading-relaxed">
+              {formatPlanContent(plan.plan)}
+            </div>
           </div>
         </ScrollArea>
         <AnimatePresence>
@@ -173,5 +263,5 @@ export const MealPlanCard = ({
         </AnimatePresence>
       </DialogContent>
     </Dialog>
-  );
-};
+  )
+}
