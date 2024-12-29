@@ -14,52 +14,55 @@ const MealPlans = () => {
   const { data: mealPlans, isLoading } = useQuery({
     queryKey: ['meal-plans'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // First, fetch meal plans
+      const { data: mealPlansData, error: mealPlansError } = await supabase
         .from('meal_plans')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
+      if (mealPlansError) {
         toast({
           title: "Error fetching meal plans",
-          description: error.message,
+          description: mealPlansError.message,
           variant: "destructive",
         });
         return [];
       }
 
-      return (data as Tables<'meal_plans'>[]).map((plan): MealPlan => {
-        let parsedPlan;
+      // Then, for each meal plan, fetch the associated recipes
+      const plansWithRecipes = await Promise.all(mealPlansData.map(async (plan) => {
+        let recipeIds = [];
         try {
-          // Handle the JSONB recipes data
-          parsedPlan = plan.recipes;
-          
-          // If it's an array of recipes, format it nicely
-          if (Array.isArray(parsedPlan)) {
-            parsedPlan = parsedPlan.map((recipe: any) => {
-              if (typeof recipe === 'string') {
-                return `- ${recipe}\n`;
-              }
-              return `- ${recipe.title || 'Untitled Recipe'}\n`;
-            }).join('\n');
-          }
-          
-          // If no proper format is found, show a placeholder
-          if (!parsedPlan || parsedPlan.length === 0) {
-            parsedPlan = "No recipes in this meal plan yet.";
-          }
+          // Extract recipe IDs from the JSONB recipes field
+          recipeIds = Array.isArray(plan.recipes) ? plan.recipes : [];
         } catch (e) {
-          console.error('Error parsing plan:', e);
-          parsedPlan = "Error loading meal plan content";
+          console.error('Error parsing recipe IDs:', e);
+          recipeIds = [];
         }
+
+        // Fetch recipe details if we have IDs
+        let recipeDetails = [];
+        if (recipeIds.length > 0) {
+          const { data: recipes, error: recipesError } = await supabase
+            .from('recipes')
+            .select('*')
+            .in('id', recipeIds);
+
+          if (!recipesError && recipes) {
+            recipeDetails = recipes;
+          }
+        }
+
+        // Format the plan content
+        const formattedPlan = formatMealPlanContent(recipeDetails, plan.preferences);
 
         return {
           id: plan.id,
           title: plan.plan_name,
-          plan: typeof parsedPlan === 'string' ? parsedPlan : JSON.stringify(parsedPlan, null, 2),
+          plan: formattedPlan,
           isMinimized: false,
           isFavorited: plan.is_favorited || false,
-          preferences: {
+          preferences: plan.preferences || {
             diet: 'omnivore',
             cuisines: [],
             allergies: [],
@@ -70,9 +73,48 @@ const MealPlans = () => {
             }
           }
         };
-      });
+      }));
+
+      return plansWithRecipes;
     },
   });
+
+  const formatMealPlanContent = (recipes: any[], preferences: any) => {
+    if (!recipes || recipes.length === 0) {
+      return "No recipes in this meal plan yet.";
+    }
+
+    // Create a structured meal plan format
+    const mealsPerDay = preferences?.parameters?.mealsPerDay || 3;
+    const numDays = preferences?.parameters?.numDays || 7;
+    
+    let formattedContent = '';
+    let recipeIndex = 0;
+    
+    for (let day = 1; day <= numDays; day++) {
+      formattedContent += `Day ${day}:\n\n`;
+      
+      if (mealsPerDay >= 1) {
+        const breakfast = recipes[recipeIndex] || { title: 'Recipe coming soon' };
+        formattedContent += `Breakfast:\n- ${breakfast.title}\n\n`;
+        recipeIndex++;
+      }
+      
+      if (mealsPerDay >= 2) {
+        const lunch = recipes[recipeIndex] || { title: 'Recipe coming soon' };
+        formattedContent += `Lunch:\n- ${lunch.title}\n\n`;
+        recipeIndex++;
+      }
+      
+      if (mealsPerDay >= 3) {
+        const dinner = recipes[recipeIndex] || { title: 'Recipe coming soon' };
+        formattedContent += `Dinner:\n- ${dinner.title}\n\n`;
+        recipeIndex++;
+      }
+    }
+
+    return formattedContent;
+  };
 
   const handleClose = (id: string) => {
     // Close functionality if needed
