@@ -47,7 +47,7 @@ Format the response as a JSON object with this structure:
   try {
     console.log('Sending request to OpenAI with system prompt:', systemPrompt);
     
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openAIApiKey}`,
@@ -64,13 +64,13 @@ Format the response as a JSON object with this structure:
       }),
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
+    if (!openAIResponse.ok) {
+      const errorData = await openAIResponse.json();
       console.error('OpenAI API error:', errorData);
       throw new Error(`Failed to generate meal plan with OpenAI: ${errorData.error?.message || 'Unknown error'}`);
     }
 
-    const data = await response.json();
+    const data = await openAIResponse.json();
     console.log('OpenAI response:', data);
     
     let mealPlanContent;
@@ -91,13 +91,14 @@ Format the response as a JSON object with this structure:
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
+    const { authorization } = req.headers;
+    if (!authorization) {
       throw new Error('No authorization header');
     }
 
@@ -105,13 +106,15 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const jwt = authHeader.replace('Bearer ', '');
+    // Verify the user's JWT
+    const jwt = authorization.replace('Bearer ', '');
     const { data: { user }, error: userError } = await supabase.auth.getUser(jwt);
     
     if (userError || !user) {
       throw new Error('Invalid user token');
     }
 
+    // Parse the request body
     const { preferences, additionalRequirements } = await req.json();
     console.log('Received request with preferences:', preferences);
     console.log('Additional requirements:', additionalRequirements);
@@ -120,7 +123,7 @@ serve(async (req) => {
     const mealPlan = await generateMealPlanWithAI(preferences, additionalRequirements);
 
     // Store recipes in Supabase
-    const recipes = await Promise.all(mealPlan.recipes.map(async (recipe) => {
+    const recipes = await Promise.all(mealPlan.recipes.map(async (recipe: any) => {
       const { data, error } = await supabase
         .from('recipes')
         .insert({
