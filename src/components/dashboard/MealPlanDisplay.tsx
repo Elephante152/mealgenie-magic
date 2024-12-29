@@ -35,7 +35,7 @@ export const MealPlanDisplay = ({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-[600px] pr-4">
+        <ScrollArea className="h-[calc(100vh-300px)] pr-4">
           {isLoading ? (
             <div className="flex items-center justify-center h-32">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500" />
