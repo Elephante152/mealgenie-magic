@@ -73,7 +73,11 @@ export function useAuth() {
           preferences: {
             diet: (rawPreferences?.diet as string) || 'omnivore',
             cuisines: Array.isArray(rawPreferences?.cuisines) ? rawPreferences.cuisines : [],
-            allergies: Array.isArray(rawPreferences?.allergies) ? rawPreferences.allergies : []
+            allergies: Array.isArray(rawPreferences?.allergies) ? rawPreferences.allergies : [],
+            activityLevel: (rawPreferences?.activityLevel as string) || 'Moderately Active',
+            calorieIntake: Number(rawPreferences?.calorieIntake) || 2000,
+            mealsPerDay: Number(rawPreferences?.mealsPerDay) || 3,
+            cookingTools: Array.isArray(rawPreferences?.cookingTools) ? rawPreferences.cookingTools : []
           }
         };
         setProfile(transformedProfile);
