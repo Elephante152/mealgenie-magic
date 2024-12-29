@@ -10,6 +10,22 @@ import { Button } from "@/components/ui/button";
 import { MealPlanList } from '@/components/dashboard/MealPlanList';
 import type { MealPlan } from '@/types/user';
 
+interface DBMealPlan {
+  id: string;
+  plan_name: string;
+  recipes: {
+    title: string;
+    ingredients: string[];
+    instructions: string;
+    preferences?: {
+      diet?: string;
+      cuisines?: string[];
+      allergies?: string[];
+      // ... other preference fields
+    };
+  }[];
+}
+
 const MealPlans = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("saved");
@@ -31,12 +47,12 @@ const MealPlans = () => {
         return [];
       }
 
-      return data.map(plan => ({
+      return data.map((plan: DBMealPlan) => ({
         id: plan.id,
         title: plan.plan_name,
         plan: JSON.stringify(plan.recipes, null, 2),
         isMinimized: false,
-        preferences: plan.recipes.preferences,
+        preferences: plan.recipes[0]?.preferences || {},
       }));
     },
   });
