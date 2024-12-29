@@ -4,7 +4,7 @@ import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 export default function SignUp() {
   const navigate = useNavigate();
@@ -21,6 +21,15 @@ export default function SignUp() {
       navigate("/onboarding");
     }
   });
+
+  const handleAuthError = (error: Error) => {
+    const errorMessage = JSON.parse(error.message)?.message || "An error occurred during signup";
+    toast({
+      variant: "destructive",
+      title: "Error",
+      description: errorMessage,
+    });
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -57,6 +66,7 @@ export default function SignUp() {
           showLinks={true}
           providers={[]}
           redirectTo={`${window.location.origin}/onboarding`}
+          onError={handleAuthError}
         />
       </Card>
     </div>
