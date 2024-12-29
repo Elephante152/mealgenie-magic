@@ -3,13 +3,10 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Bookmark, List } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { MealPlanList } from '@/components/dashboard/MealPlanList';
+import { MealPlanDisplay } from '@/components/dashboard/MealPlanDisplay';
 import { MealPlansHeader } from '@/components/dashboard/MealPlansHeader';
-import { EmptyMealPlans } from '@/components/dashboard/EmptyMealPlans';
-import type { MealPlan, MealPlanPreferences } from '@/types/user';
+import type { MealPlan } from '@/types/user';
 
 interface DBMealPlan {
   id: string;
@@ -20,33 +17,6 @@ interface DBMealPlan {
   start_date: string | null;
   end_date: string | null;
 }
-
-interface ParsedRecipe {
-  title: string;
-  ingredients: string[];
-  instructions: string;
-  preferences?: {
-    diet?: string;
-    cuisines?: string[];
-    allergies?: string[];
-    activityLevel?: string;
-    calorieIntake?: number;
-    mealsPerDay?: number;
-    cookingTools?: string[];
-    credits?: number;
-  };
-}
-
-const createDefaultPreferences = (): MealPlanPreferences => ({
-  diet: 'omnivore',
-  cuisines: [],
-  allergies: [],
-  activityLevel: 'moderate',
-  calorieIntake: 2000,
-  mealsPerDay: 3,
-  cookingTools: [],
-  credits: 0
-});
 
 const MealPlans = () => {
   const { toast } = useToast();
@@ -70,25 +40,28 @@ const MealPlans = () => {
       }
 
       return data.map((plan: DBMealPlan) => {
-        let parsedRecipes: ParsedRecipe[] = [];
+        let parsedRecipes = [];
         try {
-          parsedRecipes = JSON.parse(plan.recipes as string);
+          parsedRecipes = JSON.parse(plan.recipes);
         } catch (e) {
           console.error('Error parsing recipes:', e);
         }
 
-        const firstRecipe = parsedRecipes[0];
-        const preferences: MealPlanPreferences = {
-          ...createDefaultPreferences(),
-          ...(firstRecipe?.preferences || {})
-        };
-
         return {
           id: plan.id,
           title: plan.plan_name,
-          plan: JSON.stringify(parsedRecipes, null, 2),
+          plan: typeof parsedRecipes === 'string' ? parsedRecipes : JSON.stringify(parsedRecipes, null, 2),
           isMinimized: false,
-          preferences
+          preferences: {
+            diet: 'omnivore',
+            cuisines: [],
+            allergies: [],
+            activityLevel: 'moderate',
+            calorieIntake: 2000,
+            mealsPerDay: 3,
+            cookingTools: [],
+            credits: 0
+          }
         };
       });
     },
@@ -120,6 +93,16 @@ const MealPlans = () => {
         plan: JSON.stringify(favorite.recipes.ingredients, null, 2),
         isMinimized: false,
         isFavorited: true,
+        preferences: {
+          diet: 'omnivore',
+          cuisines: [],
+          allergies: [],
+          activityLevel: 'moderate',
+          calorieIntake: 2000,
+          mealsPerDay: 3,
+          cookingTools: [],
+          credits: 0
+        }
       }));
     },
   });
@@ -129,7 +112,6 @@ const MealPlans = () => {
   };
 
   const handleSave = async (id: string) => {
-    // Toggle favorite status
     const { error } = await supabase
       .from('favorites')
       .delete()
@@ -191,71 +173,27 @@ const MealPlans = () => {
           </TabsList>
 
           <TabsContent value="saved">
-            <Card>
-              <CardHeader>
-                <CardTitle>Saved Meal Plans</CardTitle>
-                <CardDescription>
-                  Access your previously generated and saved meal plans
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[600px] pr-4">
-                  {isLoadingSaved ? (
-                    <div className="flex items-center justify-center h-32">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500" />
-                    </div>
-                  ) : savedPlans?.length === 0 ? (
-                    <EmptyMealPlans
-                      message="No saved meal plans yet."
-                      actionLabel="Generate a New Plan"
-                    />
-                  ) : (
-                    <MealPlanList
-                      plans={savedPlans || []}
-                      onToggleMinimize={() => {}}
-                      onClose={handleClose}
-                      onSave={handleSave}
-                      onRegenerate={handleRegenerate}
-                      onDelete={handleDelete}
-                    />
-                  )}
-                </ScrollArea>
-              </CardContent>
-            </Card>
+            <MealPlanDisplay
+              plans={savedPlans}
+              isLoading={isLoadingSaved}
+              onClose={handleClose}
+              onSave={handleSave}
+              onRegenerate={handleRegenerate}
+              onDelete={handleDelete}
+              type="saved"
+            />
           </TabsContent>
 
           <TabsContent value="favorited">
-            <Card>
-              <CardHeader>
-                <CardTitle>Favorited Plans</CardTitle>
-                <CardDescription>
-                  Quick access to your favorite meal plans
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[600px] pr-4">
-                  {isLoadingFavorites ? (
-                    <div className="flex items-center justify-center h-32">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500" />
-                    </div>
-                  ) : favoritedPlans?.length === 0 ? (
-                    <EmptyMealPlans
-                      message="No favorited meal plans yet."
-                      actionLabel="Explore Plans"
-                    />
-                  ) : (
-                    <MealPlanList
-                      plans={favoritedPlans || []}
-                      onToggleMinimize={() => {}}
-                      onClose={handleClose}
-                      onSave={handleSave}
-                      onRegenerate={handleRegenerate}
-                      onDelete={handleDelete}
-                    />
-                  )}
-                </ScrollArea>
-              </CardContent>
-            </Card>
+            <MealPlanDisplay
+              plans={favoritedPlans}
+              isLoading={isLoadingFavorites}
+              onClose={handleClose}
+              onSave={handleSave}
+              onRegenerate={handleRegenerate}
+              onDelete={handleDelete}
+              type="favorited"
+            />
           </TabsContent>
         </Tabs>
       </div>
