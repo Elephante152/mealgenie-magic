@@ -3,9 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { PreferencesForm } from "@/components/onboarding/PreferencesForm";
-import { AnimatedGradientText } from "@/components/ui/animated-gradient-text";
+import { AnimatedGradientText } from "@/components/landing/AnimatedGradientText";
+import { triggerConfetti } from "@/utils/confetti";
+import { EmojiBackground } from "@/components/dashboard/EmojiBackground";
 import type { UserPreferences } from "@/types/user";
 import type { Json } from "@/integrations/supabase/types";
 
@@ -45,7 +48,6 @@ export default function Profile() {
         if (error) throw error;
 
         if (profile?.preferences) {
-          // First cast to unknown, then to the correct type
           const rawPrefs = profile.preferences as unknown as UserPreferences;
           setPreferences({
             dietType: rawPrefs.diet || 'omnivore',
@@ -81,7 +83,6 @@ export default function Profile() {
         throw new Error("No user found");
       }
 
-      // Create a preferences object that matches the Json type
       const preferencesData: Json = {
         diet: updatedPreferences.dietType.toLowerCase(),
         cuisines: updatedPreferences.favoriteCuisines,
@@ -101,6 +102,8 @@ export default function Profile() {
 
       if (error) throw error;
 
+      triggerConfetti();
+      
       toast({
         title: "Success! 🎉",
         description: "Your preferences have been updated successfully.",
@@ -129,13 +132,27 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 py-12 px-4">
+    <div className="min-h-screen bg-gray-100 py-12 px-4 relative overflow-hidden">
+      <EmojiBackground />
+      
+      <Button
+        variant="ghost"
+        onClick={() => navigate("/dashboard")}
+        className="absolute top-4 left-4 flex items-center gap-2 text-gray-600 hover:text-gray-900"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back to Dashboard
+      </Button>
+
       <div className="max-w-4xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="bg-white bg-opacity-90 backdrop-blur-md rounded-3xl shadow-xl p-8"
+          className="bg-white/70 backdrop-blur-lg rounded-3xl shadow-xl p-8 relative z-10"
+          style={{
+            background: "linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7))",
+          }}
         >
           <AnimatedGradientText 
             text="Your Preferences" 
