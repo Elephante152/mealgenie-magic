@@ -2,15 +2,17 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
 
+interface UserPreferences {
+  diet: string;
+  cuisines: string[];
+  allergies: string[];
+}
+
 export interface UserProfile {
   id: string;
   email: string;
   role: string;
-  preferences: {
-    diet: string;
-    cuisines: string[];
-    allergies: string[];
-  };
+  preferences: UserPreferences;
 }
 
 export function useAuth() {
@@ -58,15 +60,16 @@ export function useAuth() {
       }
 
       if (data) {
-        // Transform the data to match UserProfile type
+        // Transform the data to match UserProfile type with proper type casting
+        const preferences = data.preferences as UserPreferences;
         const transformedProfile: UserProfile = {
           id: data.id,
           email: data.email,
           role: data.role || 'user',
           preferences: {
-            diet: data.preferences?.diet || 'omnivore',
-            cuisines: data.preferences?.cuisines || [],
-            allergies: data.preferences?.allergies || []
+            diet: preferences?.diet || 'omnivore',
+            cuisines: preferences?.cuisines || [],
+            allergies: preferences?.allergies || []
           }
         };
         setProfile(transformedProfile);
