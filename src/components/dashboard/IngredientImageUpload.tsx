@@ -1,5 +1,5 @@
 import { useState, type ChangeEvent } from 'react';
-import { Camera, Upload, X } from 'lucide-react';
+import { Camera, Upload, X, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -27,7 +27,6 @@ export const IngredientImageUpload = ({ onImageUploaded }: IngredientImageUpload
     input.accept = 'image/*';
     input.capture = 'environment';
     input.onchange = (e) => {
-      // First cast to unknown, then to the specific type
       const event = (e as unknown) as ChangeEvent<HTMLInputElement>;
       handleImageSelect(event);
     };
@@ -73,24 +72,24 @@ export const IngredientImageUpload = ({ onImageUploaded }: IngredientImageUpload
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2">
+      <div className="grid grid-cols-2 gap-3">
         <Button
           type="button"
           variant="outline"
           onClick={() => document.getElementById('image-upload')?.click()}
-          className="flex-1"
+          className="flex items-center justify-center gap-2 h-12"
         >
-          <Upload className="w-4 h-4 mr-2" />
-          Upload Image
+          <Upload className="w-5 h-5" />
+          <span className="hidden sm:inline">Upload Image</span>
         </Button>
         <Button
           type="button"
           variant="outline"
           onClick={handleCameraCapture}
-          className="flex-1"
+          className="flex items-center justify-center gap-2 h-12"
         >
-          <Camera className="w-4 h-4 mr-2" />
-          Take Photo
+          <Camera className="w-5 h-5" />
+          <span className="hidden sm:inline">Take Photo</span>
         </Button>
         <input
           id="image-upload"
@@ -102,17 +101,17 @@ export const IngredientImageUpload = ({ onImageUploaded }: IngredientImageUpload
       </div>
 
       {previewUrl && (
-        <div className="relative">
+        <div className="relative rounded-lg overflow-hidden bg-gray-50">
           <img
             src={previewUrl}
             alt="Selected ingredient"
-            className="w-full h-48 object-cover rounded-lg"
+            className="w-full h-48 object-cover"
           />
           <Button
             type="button"
             variant="destructive"
             size="icon"
-            className="absolute top-2 right-2"
+            className="absolute top-2 right-2 rounded-full"
             onClick={clearImage}
           >
             <X className="w-4 h-4" />
@@ -120,8 +119,9 @@ export const IngredientImageUpload = ({ onImageUploaded }: IngredientImageUpload
           <Button
             type="button"
             onClick={handleUpload}
-            className="mt-2 w-full"
+            className="mt-2 w-full flex items-center justify-center gap-2"
           >
+            <Plus className="w-4 h-4" />
             Add to Meal Plan
           </Button>
         </div>
