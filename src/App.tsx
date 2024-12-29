@@ -6,7 +6,7 @@ import Dashboard from "@/pages/Dashboard";
 import Profile from "@/pages/Profile";
 import MealPlans from "@/pages/MealPlans";
 import Onboarding from "@/components/Onboarding";
-import AuthGuard from "@/components/AuthGuard";
+import { AuthGuard } from "@/components/AuthGuard";
 import { Toaster } from "@/components/ui/toaster";
 
 function App() {
