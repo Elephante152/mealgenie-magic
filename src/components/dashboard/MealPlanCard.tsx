@@ -54,7 +54,7 @@ export const MealPlanCard = ({
   }, [])
 
   return (
-    <Dialog defaultOpen={true} onOpenChange={() => onClose(plan.id)}>
+    <Dialog defaultOpen={true} onOpenChange={() => onClose(plan.id)} showClose={false}>
       <DialogContent className="max-w-4xl w-[calc(100%-2rem)] p-0 gap-0 bg-white/95 backdrop-blur-md">
         <DialogHeader className="p-6 pb-2">
           <div className="flex justify-between items-center">
