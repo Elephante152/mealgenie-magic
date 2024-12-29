@@ -9,14 +9,21 @@ export default function Login() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Listen for auth state changes
   supabase.auth.onAuthStateChange((event, session) => {
     if (event === "SIGNED_IN") {
-      toast({
-        title: "Welcome back!",
-        description: "You have successfully logged in.",
-      });
-      navigate("/");
+      // Check if the user's email is verified
+      if (session?.user?.email_confirmed_at) {
+        toast({
+          title: "Welcome back!",
+          description: "You have successfully logged in.",
+        });
+        navigate("/onboarding");
+      } else {
+        toast({
+          title: "Please verify your email",
+          description: "Check your inbox for a verification link.",
+        });
+      }
     }
   });
 
@@ -45,15 +52,19 @@ export default function Login() {
             variables: {
               default: {
                 colors: {
-                  brand: 'rgb(var(--primary))',
-                  brandAccent: 'rgb(var(--primary))',
+                  brand: '#10B981',
+                  brandAccent: '#059669',
                 },
               },
             },
+            className: {
+              container: 'space-y-4',
+              button: 'w-full px-4 py-2 rounded',
+              divider: 'my-4',
+            },
           }}
           providers={["google"]}
-          redirectTo={window.location.origin}
-          view="sign_in"
+          redirectTo={`${window.location.origin}/onboarding`}
           onlyThirdPartyProviders={false}
         />
       </Card>

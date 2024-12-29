@@ -1,17 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
-
-const DIETS = ["omnivore", "vegetarian", "vegan", "pescatarian", "keto", "paleo"];
-const CUISINES = ["Italian", "Mexican", "Indian", "Chinese", "Japanese", "Thai", "Mediterranean", "American"];
-const ALLERGIES = ["dairy", "eggs", "fish", "shellfish", "tree-nuts", "peanuts", "wheat", "soy"];
+import { PreferencesForm } from "./onboarding/PreferencesForm";
+import { AnimatedGradientText } from "./ui/animated-gradient-text";
 
 export default function Onboarding() {
   const navigate = useNavigate();
@@ -19,9 +15,6 @@ export default function Onboarding() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [diet, setDiet] = useState("omnivore");
-  const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
-  const [selectedAllergies, setSelectedAllergies] = useState<string[]>([]);
 
   useEffect(() => {
     const checkSession = async () => {
@@ -36,16 +29,7 @@ export default function Onboarding() {
     checkSession();
   }, [navigate]);
 
-  useEffect(() => {
-    // Calculate progress based on filled fields
-    let points = 0;
-    if (diet) points += 33;
-    if (selectedCuisines.length > 0) points += 33;
-    if (selectedAllergies.length > 0) points += 34;
-    setProgress(points);
-  }, [diet, selectedCuisines, selectedAllergies]);
-
-  const handleSubmit = async () => {
+  const handleSubmit = async (preferences: any) => {
     setSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -58,9 +42,13 @@ export default function Onboarding() {
         .from("profiles")
         .update({
           preferences: {
-            diet,
-            cuisines: selectedCuisines,
-            allergies: selectedAllergies,
+            diet: preferences.dietType.toLowerCase(),
+            cuisines: preferences.favoriteCuisines,
+            allergies: preferences.allergies.split(',').map((a: string) => a.trim()),
+            activityLevel: preferences.activityLevel,
+            calorieIntake: preferences.calorieIntake,
+            mealsPerDay: preferences.mealsPerDay,
+            cookingTools: preferences.preferredCookingTools,
           },
         })
         .eq("id", user.id);
@@ -97,121 +85,35 @@ export default function Onboarding() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md p-6 space-y-6 bg-white relative">
-        {saving && (
-          <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-50">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        )}
+    <div className="min-h-screen bg-gray-100 flex flex-col justify-center items-center p-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="bg-white bg-opacity-90 backdrop-blur-md rounded-3xl shadow-xl p-8 max-w-3xl w-full"
+      >
+        <AnimatedGradientText 
+          text="Welcome! Let's Personalize Your Experience" 
+          className="text-3xl font-bold mb-6 text-center block" 
+        />
+        
+        <p className="text-gray-600 text-center mb-8">
+          Tell us about your preferences to get personalized meal recommendations.
+        </p>
 
-        <div className="text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900">
-            Welcome! Let's personalize your experience
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Tell us about your dietary preferences
-          </p>
-        </div>
+        <Progress value={progress} className="h-2 mb-6" />
+        
+        <PreferencesForm onSubmit={handleSubmit} isLoading={saving} />
 
-        <Progress value={progress} className="h-2" />
-        <p className="text-sm text-gray-500 text-center">Profile completion: {progress}%</p>
-
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>Dietary Preference</Label>
-            <Select value={diet} onValueChange={setDiet}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {DIETS.map((d) => (
-                  <SelectItem key={d} value={d}>
-                    {d.charAt(0).toUpperCase() + d.slice(1)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Favorite Cuisines</Label>
-            <Select
-              value={selectedCuisines[0] || ""}
-              onValueChange={(value) => setSelectedCuisines([...selectedCuisines, value])}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select cuisines..." />
-              </SelectTrigger>
-              <SelectContent>
-                {CUISINES.filter((c) => !selectedCuisines.includes(c)).map((cuisine) => (
-                  <SelectItem key={cuisine} value={cuisine}>
-                    {cuisine}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {selectedCuisines.map((cuisine) => (
-                <Button
-                  key={cuisine}
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setSelectedCuisines(selectedCuisines.filter((c) => c !== cuisine))}
-                >
-                  {cuisine} ×
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Allergies</Label>
-            <Select
-              value={selectedAllergies[0] || ""}
-              onValueChange={(value) => setSelectedAllergies([...selectedAllergies, value])}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select allergies..." />
-              </SelectTrigger>
-              <SelectContent>
-                {ALLERGIES.filter((a) => !selectedAllergies.includes(a)).map((allergy) => (
-                  <SelectItem key={allergy} value={allergy}>
-                    {allergy.charAt(0).toUpperCase() + allergy.slice(1)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {selectedAllergies.map((allergy) => (
-                <Button
-                  key={allergy}
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setSelectedAllergies(selectedAllergies.filter((a) => a !== allergy))}
-                >
-                  {allergy} ×
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          <Button 
-            className="w-full" 
-            onClick={handleSubmit}
-            disabled={saving || progress < 33}
+        <div className="mt-8 text-center">
+          <button
+            onClick={() => navigate("/")}
+            className="text-emerald-600 hover:text-emerald-700 font-medium"
           >
-            {saving ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              'Complete Setup'
-            )}
-          </Button>
+            Skip for now
+          </button>
         </div>
-      </Card>
+      </motion.div>
     </div>
   );
 }
