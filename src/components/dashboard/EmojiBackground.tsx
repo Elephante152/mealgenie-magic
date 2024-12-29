@@ -18,7 +18,7 @@ export const EmojiBackground = () => {
   }, []);
 
   return (
-    <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 opacity-10">
+    <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
       {emojiElements.map((element) => (
         <motion.div
           key={element.id}
