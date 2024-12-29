@@ -1,15 +1,21 @@
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { MealPlanDisplay } from '@/components/dashboard/MealPlanDisplay';
 import { MealPlansHeader } from '@/components/dashboard/MealPlansHeader';
-import type { MealPlan } from '@/types/user';
+import type { MealPlan, MealPlanPreferences } from '@/types/user';
 import type { Tables } from '@/integrations/supabase/types';
+
+interface Recipe {
+  id: string;
+  title: string;
+  ingredients: any;
+  instructions: string;
+  image_url?: string;
+}
 
 const MealPlans = () => {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("saved");
 
   const { data: mealPlans, isLoading } = useQuery({
     queryKey: ['meal-plans'],
@@ -31,7 +37,7 @@ const MealPlans = () => {
 
       // Then, for each meal plan, fetch the associated recipes
       const plansWithRecipes = await Promise.all(mealPlansData.map(async (plan) => {
-        let recipeIds = [];
+        let recipeIds: string[] = [];
         try {
           // Extract recipe IDs from the JSONB recipes field
           recipeIds = Array.isArray(plan.recipes) ? plan.recipes : [];
@@ -41,7 +47,7 @@ const MealPlans = () => {
         }
 
         // Fetch recipe details if we have IDs
-        let recipeDetails = [];
+        let recipeDetails: Recipe[] = [];
         if (recipeIds.length > 0) {
           const { data: recipes, error: recipesError } = await supabase
             .from('recipes')
@@ -60,21 +66,21 @@ const MealPlans = () => {
           .eq('id', plan.user_id)
           .single();
 
-        const userPreferences = profileData?.preferences || {
-          diet: 'omnivore',
-          cuisines: [],
-          allergies: [],
+        const userPreferences: MealPlanPreferences = {
+          diet: profileData?.preferences?.diet || 'omnivore',
+          cuisines: profileData?.preferences?.cuisines || [],
+          allergies: profileData?.preferences?.allergies || [],
           parameters: {
-            mealsPerDay: 3,
-            numDays: 7,
-            caloricTarget: 2000
+            mealsPerDay: profileData?.preferences?.mealsPerDay || 3,
+            numDays: profileData?.preferences?.numDays || 7,
+            caloricTarget: profileData?.preferences?.calorieIntake || 2000
           }
         };
 
         // Format the plan content
         const formattedPlan = formatMealPlanContent(recipeDetails, userPreferences);
 
-        return {
+        const transformedPlan: MealPlan = {
           id: plan.id,
           title: plan.plan_name,
           plan: formattedPlan,
@@ -82,20 +88,22 @@ const MealPlans = () => {
           isFavorited: plan.is_favorited || false,
           preferences: userPreferences
         };
+
+        return transformedPlan;
       }));
 
       return plansWithRecipes;
     },
   });
 
-  const formatMealPlanContent = (recipes: any[], preferences: any) => {
+  const formatMealPlanContent = (recipes: Recipe[], preferences: MealPlanPreferences): string => {
     if (!recipes || recipes.length === 0) {
       return "No recipes in this meal plan yet.";
     }
 
     // Use preferences from user profile
-    const mealsPerDay = preferences?.parameters?.mealsPerDay || 3;
-    const numDays = preferences?.parameters?.numDays || 7;
+    const mealsPerDay = preferences.parameters?.mealsPerDay || 3;
+    const numDays = preferences.parameters?.numDays || 7;
     
     let formattedContent = '';
     let recipeIndex = 0;
