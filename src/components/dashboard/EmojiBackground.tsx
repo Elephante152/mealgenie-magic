@@ -48,7 +48,7 @@ export const EmojiBackground = () => {
       {emojiElements.map((element) => (
         <motion.div
           key={element.id}
-          className="absolute text-3xl opacity-40"
+          className="absolute text-3xl opacity-0"
           initial={{ x: element.x, y: element.y }}
           animate={{
             y: [element.y, element.y - 50, element.y],

@@ -14,16 +14,14 @@ export const GenerateButton = ({ onClick, isLoading }: GenerateButtonProps) => {
         <TooltipTrigger asChild>
           <motion.button
             onClick={onClick}
-            className="p-6 rounded-full shadow-lg bg-gradient-to-br from-[#9b87f5] via-[#7E69AB] to-[#6E59A5] text-white relative group hover:shadow-purple-200/50 transition-shadow duration-300"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            className="px-6 py-3 rounded-lg shadow-lg bg-gradient-to-br from-[#9b87f5] via-[#7E69AB] to-[#6E59A5] text-white relative group hover:shadow-purple-200/50 transition-shadow duration-300 flex items-center gap-3"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             animate={isLoading ? { rotate: 360 } : {}}
             transition={isLoading ? { duration: 2, repeat: Infinity, ease: "linear" } : { duration: 0.2 }}
           >
-            <Utensils className={`w-7 h-7 ${isLoading ? 'animate-pulse' : ''}`} />
-            <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap text-sm font-medium text-[#6E59A5]">
-              Generate Plan
-            </div>
+            <Utensils className={`w-5 h-5 ${isLoading ? 'animate-pulse' : ''}`} />
+            <span className="font-medium">Generate Plan</span>
           </motion.button>
         </TooltipTrigger>
         <TooltipContent>

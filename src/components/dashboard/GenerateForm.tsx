@@ -32,7 +32,7 @@ export const GenerateForm = ({ profile, isLoading, onGenerate }: GenerateFormPro
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-6 space-y-8">
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 space-y-6">
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold">
           <AnimatedGradientText text="Create Your Meal Plan" />
@@ -40,7 +40,7 @@ export const GenerateForm = ({ profile, isLoading, onGenerate }: GenerateFormPro
         <p className="text-gray-600">Customize your meal plan with your preferences and requirements</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-8 bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg">
+      <form onSubmit={handleSubmit} className="space-y-6 bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg">
         <div className="relative">
           <Label htmlFor="mealPlanText" className="flex items-center text-gray-700 mb-2 text-lg">
             Additional Requirements
@@ -105,7 +105,7 @@ export const GenerateForm = ({ profile, isLoading, onGenerate }: GenerateFormPro
           <IngredientImageUpload onImageUploaded={handleImageUploaded} />
         </div>
 
-        <div className="flex flex-col items-center gap-6 pt-8">
+        <div className="flex flex-col items-center gap-4 pt-4">
           <GenerateButton 
             onClick={() => onGenerate(mealPlanText, ingredientImageUrl || undefined)} 
             isLoading={isLoading} 
