@@ -16,17 +16,44 @@ export default function SignUp() {
 
   // Listen for auth state changes
   supabase.auth.onAuthStateChange(async (event, session) => {
-    console.log("Auth event:", event);
     if (event === "SIGNED_IN") {
       setLoading(true);
       try {
         // Check if the user's email is verified
         if (session?.user?.email_confirmed_at) {
-          toast({
-            title: "Welcome!",
-            description: "Your account has been created successfully.",
-          });
-          navigate("/onboarding");
+          // Check if user has completed onboarding
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('preferences')
+            .eq('id', session.user.id)
+            .single();
+
+          if (error) throw error;
+
+          // Safely transform the preferences data with type checking
+          const rawPreferences = profile?.preferences as Record<string, unknown>;
+          const hasCompletedOnboarding = 
+            typeof rawPreferences?.diet === 'string' &&
+            Array.isArray(rawPreferences?.cuisines) &&
+            Array.isArray(rawPreferences?.allergies) &&
+            typeof rawPreferences?.activityLevel === 'string' &&
+            typeof rawPreferences?.calorieIntake === 'number' &&
+            typeof rawPreferences?.mealsPerDay === 'number' &&
+            Array.isArray(rawPreferences?.cookingTools);
+
+          if (hasCompletedOnboarding) {
+            toast({
+              title: "Welcome!",
+              description: "Your account has been created successfully.",
+            });
+            navigate("/dashboard");
+          } else {
+            toast({
+              title: "Welcome!",
+              description: "Let's set up your preferences.",
+            });
+            navigate("/onboarding");
+          }
         } else {
           toast({
             title: "Please verify your email",
@@ -94,7 +121,7 @@ export default function SignUp() {
           }}
           view="sign_up"
           providers={["google"]}
-          redirectTo={`${window.location.origin}/onboarding`}
+          redirectTo={`${window.location.origin}/dashboard`}
           localization={{
             variables: {
               sign_up: {

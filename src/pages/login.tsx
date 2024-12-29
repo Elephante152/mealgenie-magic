@@ -4,7 +4,6 @@ import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import type { UserPreferences } from "@/hooks/useAuth";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -104,7 +103,7 @@ export default function Login() {
             },
           }}
           providers={["google"]}
-          redirectTo={`${window.location.origin}/onboarding`}
+          redirectTo={`${window.location.origin}/dashboard`}
           onlyThirdPartyProviders={false}
         />
       </Card>
