@@ -1,81 +1,94 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import "https://deno.land/x/xhr@0.1.0/mod.ts"
-import OpenAI from "https://deno.land/x/openai@v4.24.0/mod.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const generateMealPlanWithAI = async (preferences: any, additionalRequirements: string) => {
-  const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-  if (!openAIApiKey) {
-    console.error('OpenAI API key not configured');
-    throw new Error('OpenAI API key not configured');
+const mockMealPlans = [
+  {
+    plan_name: "Balanced Weekly Plan",
+    recipes: [
+      {
+        title: "Mediterranean Breakfast Bowl",
+        ingredients: [
+          "2 eggs",
+          "1 cup spinach",
+          "1/2 avocado",
+          "Cherry tomatoes",
+          "Feta cheese",
+          "Olive oil"
+        ],
+        instructions: "1. Sauté spinach in olive oil\n2. Poach eggs\n3. Assemble bowl with spinach, eggs, sliced avocado, tomatoes\n4. Top with crumbled feta"
+      },
+      {
+        title: "Quinoa Power Lunch",
+        ingredients: [
+          "1 cup quinoa",
+          "1 can chickpeas",
+          "Mixed vegetables",
+          "Lemon juice",
+          "Olive oil",
+          "Fresh herbs"
+        ],
+        instructions: "1. Cook quinoa according to package instructions\n2. Rinse and drain chickpeas\n3. Chop vegetables\n4. Mix all ingredients with lemon juice and olive oil\n5. Season with herbs"
+      },
+      {
+        title: "Grilled Salmon Dinner",
+        ingredients: [
+          "Salmon fillet",
+          "Asparagus",
+          "Sweet potato",
+          "Lemon",
+          "Garlic",
+          "Herbs"
+        ],
+        instructions: "1. Marinate salmon with lemon, garlic, and herbs\n2. Preheat grill\n3. Grill salmon for 4-5 minutes per side\n4. Roast asparagus and sweet potato\n5. Serve together"
+      }
+    ]
+  },
+  {
+    plan_name: "Plant-Based Week",
+    recipes: [
+      {
+        title: "Overnight Oats",
+        ingredients: [
+          "Rolled oats",
+          "Almond milk",
+          "Chia seeds",
+          "Maple syrup",
+          "Fresh berries",
+          "Nuts"
+        ],
+        instructions: "1. Mix oats, almond milk, and chia seeds\n2. Add maple syrup to taste\n3. Refrigerate overnight\n4. Top with berries and nuts before serving"
+      },
+      {
+        title: "Buddha Bowl",
+        ingredients: [
+          "Brown rice",
+          "Roasted chickpeas",
+          "Kale",
+          "Sweet potato",
+          "Tahini",
+          "Seeds"
+        ],
+        instructions: "1. Cook brown rice\n2. Roast chickpeas and sweet potato\n3. Massage kale with olive oil\n4. Assemble bowl\n5. Drizzle with tahini sauce"
+      }
+    ]
   }
+];
 
-  console.log('Generating meal plan with preferences:', JSON.stringify(preferences));
-  console.log('Additional requirements:', additionalRequirements);
-
-  const openai = new OpenAI({
-    apiKey: openAIApiKey,
-  });
-
-  const systemPrompt = `You are a professional nutritionist and meal planner. Create a detailed meal plan that follows these guidelines:
-- Consider dietary restrictions: ${preferences?.diet || 'None'}
-- Avoid allergens: ${preferences?.allergies?.join(', ') || 'None'}
-- Preferred cuisines: ${preferences?.cuisines?.join(', ') || 'Any'}
-- Meals per day: ${preferences?.mealsPerDay || 3}
-- Target calories per day: ${preferences?.calorieIntake || 2000}
-${additionalRequirements ? `Additional requirements: ${additionalRequirements}` : ''}
-
-Return the response in this exact JSON format:
-{
-  "plan_name": "Name of the meal plan",
-  "recipes": [
-    {
-      "title": "Recipe name",
-      "ingredients": ["ingredient 1", "ingredient 2"],
-      "instructions": "Step by step instructions"
-    }
-  ]
-}`;
-
-  console.log('Sending request to OpenAI with system prompt:', systemPrompt);
-
-  try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: "Generate a meal plan based on the above preferences." }
-      ],
-      temperature: 0.7,
-      max_tokens: 2000,
-    });
-
-    if (!completion.choices[0]?.message?.content) {
-      console.error('No content in OpenAI response');
-      throw new Error('No response content from OpenAI');
-    }
-
-    const response = completion.choices[0].message.content;
-    console.log('OpenAI response received:', response);
-
-    try {
-      const mealPlanContent = JSON.parse(response);
-      console.log('Successfully parsed meal plan:', JSON.stringify(mealPlanContent));
-      return mealPlanContent;
-    } catch (parseError) {
-      console.error('Error parsing OpenAI response:', parseError);
-      console.log('Raw response content:', response);
-      throw new Error('Failed to parse meal plan response');
-    }
-  } catch (error) {
-    console.error('Error in OpenAI request:', error);
-    throw new Error(`OpenAI API error: ${error.message}`);
+const generateMockMealPlan = (preferences: any) => {
+  // Select a random meal plan from mock data
+  const randomPlan = mockMealPlans[Math.floor(Math.random() * mockMealPlans.length)];
+  
+  // Customize the plan based on preferences
+  if (preferences?.diet === 'vegetarian') {
+    randomPlan.plan_name = "Vegetarian " + randomPlan.plan_name;
   }
+  
+  return randomPlan;
 };
 
 serve(async (req) => {
@@ -111,12 +124,11 @@ serve(async (req) => {
 
     console.log('User verified:', user.id);
 
-    const { preferences, additionalRequirements, ingredientImageUrl } = await req.json();
+    const { preferences, additionalRequirements } = await req.json();
     console.log('Received request with preferences:', preferences);
     console.log('Additional requirements:', additionalRequirements);
-    console.log('Ingredient image URL:', ingredientImageUrl);
 
-    const mealPlan = await generateMealPlanWithAI(preferences, additionalRequirements);
+    const mealPlan = generateMockMealPlan(preferences);
 
     const recipes = await Promise.all(mealPlan.recipes.map(async (recipe: any) => {
       const { data, error } = await supabase
