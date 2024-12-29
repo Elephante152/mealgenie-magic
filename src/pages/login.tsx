@@ -30,12 +30,20 @@ export default function Login() {
 
         if (error) throw error;
 
-        // Cast the preferences to our UserPreferences type
-        const preferences = profile?.preferences as UserPreferences;
+        // Safely transform the preferences data with type checking
+        const rawPreferences = profile?.preferences as Record<string, unknown>;
+        const hasCompletedOnboarding = 
+          typeof rawPreferences?.diet === 'string' &&
+          Array.isArray(rawPreferences?.cuisines) &&
+          Array.isArray(rawPreferences?.allergies) &&
+          typeof rawPreferences?.activityLevel === 'string' &&
+          typeof rawPreferences?.calorieIntake === 'number' &&
+          typeof rawPreferences?.mealsPerDay === 'number' &&
+          Array.isArray(rawPreferences?.cookingTools);
 
-        // If user has preferences set (completed onboarding), redirect to dashboard
+        // If user has completed onboarding (has valid preferences), redirect to dashboard
         // Otherwise, send them to onboarding
-        if (preferences?.diet) {
+        if (hasCompletedOnboarding) {
           toast({
             title: "Welcome back!",
             description: "You have successfully logged in.",
