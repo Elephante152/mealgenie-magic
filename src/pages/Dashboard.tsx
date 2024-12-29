@@ -29,6 +29,16 @@ import { useAuth } from "@/hooks/useAuth"
 import { Menu, HelpCircle, Settings, CreditCard, Wand2, X, Minimize2, Maximize2, Save, RefreshCw, Utensils, AlertTriangle, Globe, Activity, BarChart, Coffee } from 'lucide-react'
 import { AnimatedGradientText } from '@/components/landing/AnimatedGradientText'
 
+interface UserPreferences {
+  dietType: string
+  allergies: string
+  favoriteCuisines: string[]
+  activityLevel: string
+  calorieIntake: number
+  mealsPerDay: number
+  cookingTools: string[]
+}
+
 interface MealPlan {
   id: number
   title: string
@@ -251,7 +261,7 @@ export default function Dashboard() {
                             Diet Type
                           </h4>
                           <p className="text-sm text-gray-600 bg-gray-100 p-2 rounded">
-                            {profile?.preferences?.diet || "Not set"}
+                            {profile?.preferences?.dietType || "Not set"}
                           </p>
                         </div>
                         <div className="space-y-1">
@@ -260,7 +270,7 @@ export default function Dashboard() {
                             Allergies
                           </h4>
                           <p className="text-sm text-gray-600 bg-gray-100 p-2 rounded">
-                            {profile?.preferences?.allergies?.join(", ") || "None"}
+                            {profile?.preferences?.allergies || "None"}
                           </p>
                         </div>
                         <div className="space-y-1">
@@ -269,7 +279,7 @@ export default function Dashboard() {
                             Favorite Cuisines
                           </h4>
                           <p className="text-sm text-gray-600 bg-gray-100 p-2 rounded">
-                            {profile?.preferences?.cuisines?.join(", ") || "Not set"}
+                            {profile?.preferences?.favoriteCuisines?.join(", ") || "Not set"}
                           </p>
                         </div>
                       </div>
