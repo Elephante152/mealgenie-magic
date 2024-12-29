@@ -17,3 +17,10 @@ export interface MealPlan {
   recipeId?: string;
   isFavorited?: boolean;
 }
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  role: string;
+  preferences: UserPreferences;
+}
