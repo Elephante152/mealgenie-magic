@@ -53,8 +53,26 @@ const MealPlans = () => {
           }
         }
 
+        // Get user preferences from profiles table
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('preferences')
+          .eq('id', plan.user_id)
+          .single();
+
+        const userPreferences = profileData?.preferences || {
+          diet: 'omnivore',
+          cuisines: [],
+          allergies: [],
+          parameters: {
+            mealsPerDay: 3,
+            numDays: 7,
+            caloricTarget: 2000
+          }
+        };
+
         // Format the plan content
-        const formattedPlan = formatMealPlanContent(recipeDetails);
+        const formattedPlan = formatMealPlanContent(recipeDetails, userPreferences);
 
         return {
           id: plan.id,
@@ -62,16 +80,7 @@ const MealPlans = () => {
           plan: formattedPlan,
           isMinimized: false,
           isFavorited: plan.is_favorited || false,
-          preferences: {
-            diet: 'omnivore',
-            cuisines: [],
-            allergies: [],
-            parameters: {
-              mealsPerDay: 3,
-              numDays: 7,
-              caloricTarget: 2000
-            }
-          }
+          preferences: userPreferences
         };
       }));
 
@@ -79,14 +88,14 @@ const MealPlans = () => {
     },
   });
 
-  const formatMealPlanContent = (recipes: any[]) => {
+  const formatMealPlanContent = (recipes: any[], preferences: any) => {
     if (!recipes || recipes.length === 0) {
       return "No recipes in this meal plan yet.";
     }
 
-    // Create a structured meal plan format with default values
-    const mealsPerDay = 3;
-    const numDays = 7;
+    // Use preferences from user profile
+    const mealsPerDay = preferences?.parameters?.mealsPerDay || 3;
+    const numDays = preferences?.parameters?.numDays || 7;
     
     let formattedContent = '';
     let recipeIndex = 0;
