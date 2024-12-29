@@ -54,7 +54,7 @@ serve(async (req) => {
     console.log('Received request with preferences:', preferences);
     console.log('Additional requirements:', additionalRequirements);
 
-    // Create Supabase client
+    // Create Supabase client using environment variables
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -98,7 +98,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ mealPlan, recipes }),
+      JSON.stringify({ mealPlan, recipes: mockPlan.recipes }),
       { 
         headers: {
           ...corsHeaders,
