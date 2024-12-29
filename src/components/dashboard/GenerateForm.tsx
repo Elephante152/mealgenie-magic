@@ -32,9 +32,9 @@ export const GenerateForm = ({ profile, isLoading, onGenerate }: GenerateFormPro
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 w-full max-w-md mx-auto">
+    <form onSubmit={handleSubmit} className="w-full max-w-lg mx-auto px-4 sm:px-6 space-y-6">
       <div className="relative">
-        <Label htmlFor="mealPlanText" className="flex items-center text-gray-700">
+        <Label htmlFor="mealPlanText" className="flex items-center text-gray-700 mb-2">
           Additional Requirements
           <HoverCard>
             <HoverCardTrigger asChild>
@@ -43,20 +43,20 @@ export const GenerateForm = ({ profile, isLoading, onGenerate }: GenerateFormPro
               </Button>
             </HoverCardTrigger>
             <HoverCardContent 
-              className="w-80 p-6 bg-white/95 backdrop-blur-md" 
+              className="w-[280px] sm:w-[320px] p-4 bg-white/95 backdrop-blur-md" 
               align="end" 
               side="right"
               sideOffset={5}
             >
-              <div className="space-y-4">
-                <h3 className="font-semibold text-lg text-gray-900">Your Preferences</h3>
-                <div className="grid gap-3">
+              <div className="space-y-3">
+                <h3 className="font-semibold text-base text-gray-900">Your Preferences</h3>
+                <div className="grid gap-2">
                   <div className="space-y-1">
                     <h4 className="font-medium text-sm text-gray-700 flex items-center">
                       <Utensils className="w-4 h-4 mr-2" />
                       Diet Type
                     </h4>
-                    <p className="text-sm text-gray-600 bg-gray-100 p-2 rounded">
+                    <p className="text-sm text-gray-600 bg-gray-50/80 p-2 rounded">
                       {profile?.preferences?.diet || "Not set"}
                     </p>
                   </div>
@@ -65,7 +65,7 @@ export const GenerateForm = ({ profile, isLoading, onGenerate }: GenerateFormPro
                       <AlertTriangle className="w-4 h-4 mr-2" />
                       Allergies
                     </h4>
-                    <p className="text-sm text-gray-600 bg-gray-100 p-2 rounded">
+                    <p className="text-sm text-gray-600 bg-gray-50/80 p-2 rounded">
                       {profile?.preferences?.allergies?.join(", ") || "None"}
                     </p>
                   </div>
@@ -74,7 +74,7 @@ export const GenerateForm = ({ profile, isLoading, onGenerate }: GenerateFormPro
                       <Globe className="w-4 h-4 mr-2" />
                       Favorite Cuisines
                     </h4>
-                    <p className="text-sm text-gray-600 bg-gray-100 p-2 rounded">
+                    <p className="text-sm text-gray-600 bg-gray-50/80 p-2 rounded">
                       {profile?.preferences?.cuisines?.join(", ") || "Not set"}
                     </p>
                   </div>
@@ -88,17 +88,20 @@ export const GenerateForm = ({ profile, isLoading, onGenerate }: GenerateFormPro
           placeholder="Enter any specific requirements for your meal plan..."
           value={mealPlanText}
           onChange={(e) => setMealPlanText(e.target.value)}
-          className="mt-2 h-20 resize-none bg-white/50 backdrop-blur-sm border-gray-200 focus:border-emerald-500 focus:ring focus:ring-emerald-200 transition duration-200"
+          className="min-h-[80px] resize-none bg-white/50 backdrop-blur-sm border-gray-200 focus:border-emerald-500 focus:ring focus:ring-emerald-200 transition duration-200"
         />
       </div>
 
       <div className="bg-white/50 backdrop-blur-sm rounded-lg p-4 border border-gray-200">
-        <Label className="mb-2 block text-gray-700">Add Ingredients from Photo</Label>
+        <Label className="block text-gray-700 mb-3">Add Ingredients from Photo</Label>
         <IngredientImageUpload onImageUploaded={handleImageUploaded} />
       </div>
 
-      <div className="flex flex-col items-center space-y-4">
-        <GenerateButton onClick={() => onGenerate(mealPlanText, ingredientImageUrl || undefined)} isLoading={isLoading} />
+      <div className="flex flex-col items-center gap-4 pt-2">
+        <GenerateButton 
+          onClick={() => onGenerate(mealPlanText, ingredientImageUrl || undefined)} 
+          isLoading={isLoading} 
+        />
         <Dialog>
           <DialogTrigger asChild>
             <button 
@@ -108,18 +111,18 @@ export const GenerateForm = ({ profile, isLoading, onGenerate }: GenerateFormPro
               Adjust Parameters
             </button>
           </DialogTrigger>
-          <DialogContent className="bg-white/90 backdrop-blur-md">
+          <DialogContent className="bg-white/90 backdrop-blur-md max-w-md w-[90vw] sm:w-full mx-auto">
             <DialogHeader>
               <DialogTitle>
-                <AnimatedGradientText text="Adjust Meal Plan Parameters" className="text-2xl font-semibold" />
+                <AnimatedGradientText text="Adjust Meal Plan Parameters" className="text-xl sm:text-2xl font-semibold" />
               </DialogTitle>
               <DialogDescription>
                 Fine-tune your meal plan generation settings here.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
-              <div className="flex space-x-4">
-                <div className="flex-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
                   <Label htmlFor="numMeals">Meals per Day</Label>
                   <Input
                     id="numMeals"
@@ -127,10 +130,10 @@ export const GenerateForm = ({ profile, isLoading, onGenerate }: GenerateFormPro
                     min="1"
                     max="6"
                     value={profile?.preferences?.mealsPerDay || 3}
-                    className="mt-1"
+                    className="w-full"
                   />
                 </div>
-                <div className="flex-1">
+                <div className="space-y-2">
                   <Label htmlFor="numDays">Number of Days</Label>
                   <Input
                     id="numDays"
@@ -138,11 +141,11 @@ export const GenerateForm = ({ profile, isLoading, onGenerate }: GenerateFormPro
                     min="1"
                     max="30"
                     value={7}
-                    className="mt-1"
+                    className="w-full"
                   />
                 </div>
               </div>
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="caloricTarget">Daily Caloric Target</Label>
                 <div className="relative mt-2">
                   <Slider
@@ -158,7 +161,7 @@ export const GenerateForm = ({ profile, isLoading, onGenerate }: GenerateFormPro
                     style={{ filter: 'blur(4px)' }} 
                   />
                 </div>
-                <div className="text-center mt-1">2000 calories</div>
+                <div className="text-center mt-1 text-sm text-gray-600">2000 calories</div>
               </div>
             </div>
           </DialogContent>
