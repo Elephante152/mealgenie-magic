@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Login from "./pages/login";
 import SignUp from "./pages/signup";
 import Onboarding from "./components/Onboarding";
+import Dashboard from "./pages/Dashboard";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,11 @@ const App = () => (
           <Route path="/onboarding" element={
             <AuthGuard>
               <Onboarding />
+            </AuthGuard>
+          } />
+          <Route path="/dashboard" element={
+            <AuthGuard>
+              <Dashboard />
             </AuthGuard>
           } />
           <Route
