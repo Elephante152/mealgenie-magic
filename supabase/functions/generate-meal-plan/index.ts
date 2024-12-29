@@ -8,30 +8,35 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
     const { preferences, additionalRequirements } = await req.json()
+    console.log('Received request with preferences:', preferences)
+    console.log('Additional requirements:', additionalRequirements)
     
+    const openAIApiKey = Deno.env.get('OPENAI_API_KEY')
+    if (!openAIApiKey) {
+      throw new Error('OpenAI API key not configured')
+    }
+
+    // Create the prompt for meal plan generation
     const prompt = `Create a detailed meal plan based on these preferences:
-    - Diet: ${preferences.diet}
-    - Cuisines: ${preferences.cuisines.join(', ')}
-    - Allergies to avoid: ${preferences.allergies.join(', ')}
-    - Activity Level: ${preferences.activityLevel}
-    - Daily Calorie Target: ${preferences.calorieIntake}
-    - Meals per Day: ${preferences.mealsPerDay}
-    - Available Cooking Tools: ${preferences.cookingTools.join(', ')}
+    - Diet: ${preferences?.diet || 'Not specified'}
+    - Cuisines: ${preferences?.cuisines?.join(', ') || 'Not specified'}
+    - Allergies to avoid: ${preferences?.allergies?.join(', ') || 'None'}
     
-    Additional Requirements: ${additionalRequirements}
+    Additional Requirements: ${additionalRequirements || 'None'}
     
-    Format the response as a JSON object with this structure:
+    Please provide a meal plan in this exact JSON format:
     {
-      "title": "Name of the meal plan",
+      "plan_name": "Name of the meal plan",
       "meals": [
         {
-          "name": "Meal name",
+          "title": "Meal name",
           "ingredients": ["ingredient1", "amount1", "ingredient2", "amount2"],
           "instructions": "Step by step instructions",
           "nutritionalInfo": {
@@ -44,10 +49,11 @@ serve(async (req) => {
       ]
     }`
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    console.log('Sending request to OpenAI')
+    const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -55,7 +61,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are a professional nutritionist and chef. Generate meal plans that are detailed, healthy, and follow the user\'s preferences exactly.'
+            content: 'You are a professional nutritionist and chef. Generate meal plans that are detailed, healthy, and follow the user\'s preferences exactly. Always respond with valid JSON.'
           },
           {
             role: 'user',
@@ -65,20 +71,30 @@ serve(async (req) => {
       }),
     })
 
-    const data = await response.json()
-    const mealPlan = JSON.parse(data.choices[0].message.content)
+    const openAIData = await openAIResponse.json()
+    console.log('Received response from OpenAI:', openAIData)
 
-    // Create recipe entries in Supabase
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    if (!openAIData.choices?.[0]?.message?.content) {
+      throw new Error('Invalid response from OpenAI')
+    }
 
-    const recipes = await Promise.all(mealPlan.meals.map(async (meal) => {
+    const mealPlan = JSON.parse(openAIData.choices[0].message.content)
+
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Supabase credentials not configured')
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey)
+
+    // Store recipes in Supabase
+    const recipes = await Promise.all(mealPlan.meals.map(async (meal: any) => {
       const { data: recipe, error } = await supabase
         .from('recipes')
         .insert({
-          title: meal.name,
+          title: meal.title,
           ingredients: meal.ingredients,
           instructions: meal.instructions,
           is_public: false,
@@ -86,7 +102,10 @@ serve(async (req) => {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('Error storing recipe:', error)
+        throw error
+      }
       return recipe
     }))
 
@@ -94,23 +113,37 @@ serve(async (req) => {
     const { data: createdPlan, error: planError } = await supabase
       .from('meal_plans')
       .insert({
-        plan_name: mealPlan.title,
+        plan_name: mealPlan.plan_name,
         recipes: recipes.map(r => r.id),
       })
       .select()
       .single()
 
-    if (planError) throw planError
+    if (planError) {
+      console.error('Error storing meal plan:', planError)
+      throw planError
+    }
 
     return new Response(
       JSON.stringify({ mealPlan: createdPlan, recipes }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        } 
+      }
     )
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Error in generate-meal-plan function:', error)
     return new Response(
       JSON.stringify({ error: 'An unexpected error occurred', details: error.message }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      { 
+        status: 500,
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        } 
+      }
     )
   }
 })
