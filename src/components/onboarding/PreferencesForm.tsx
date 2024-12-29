@@ -59,19 +59,59 @@ export const PreferencesForm = ({ onSubmit, isLoading }: PreferencesFormProps) =
           <Utensils className="w-5 h-5 mr-2" />
           Diet Type
         </Label>
-        <RadioGroup value={dietType} onValueChange={setDietType} className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-4">
           {DIET_TYPES.map(diet => (
-            <div key={diet}>
-              <RadioGroupItem value={diet} id={diet} className="peer sr-only" />
+            <div key={diet} className="relative">
+              <RadioGroupItem
+                value={diet}
+                id={diet}
+                className="peer sr-only"
+                checked={dietType === diet}
+                onClick={() => setDietType(diet)}
+              />
               <Label
                 htmlFor={diet}
-                className="flex items-center justify-center px-4 py-2 bg-white border border-gray-200 rounded-md cursor-pointer transition-colors peer-checked:bg-emerald-100 peer-checked:border-emerald-500 hover:bg-gray-50"
+                className={`flex items-center justify-center px-4 py-3 bg-white border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                  dietType === diet
+                    ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm'
+                    : 'border-gray-200 hover:border-emerald-200 hover:bg-gray-50'
+                }`}
               >
                 {diet}
               </Label>
             </div>
           ))}
-        </RadioGroup>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <Label className="text-lg font-semibold flex items-center">
+          <Activity className="w-5 h-5 mr-2" />
+          Activity Level
+        </Label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {ACTIVITY_LEVELS.map(level => (
+            <div key={level} className="relative">
+              <RadioGroupItem
+                value={level}
+                id={level}
+                className="peer sr-only"
+                checked={activityLevel === level}
+                onClick={() => setActivityLevel(level)}
+              />
+              <Label
+                htmlFor={level}
+                className={`flex items-center justify-center px-4 py-3 bg-white border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                  activityLevel === level
+                    ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm'
+                    : 'border-gray-200 hover:border-emerald-200 hover:bg-gray-50'
+                }`}
+              >
+                {level}
+              </Label>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="space-y-2">
@@ -105,26 +145,6 @@ export const PreferencesForm = ({ onSubmit, isLoading }: PreferencesFormProps) =
             </div>
           ))}
         </div>
-      </div>
-
-      <div className="space-y-4">
-        <Label className="text-lg font-semibold flex items-center">
-          <Activity className="w-5 h-5 mr-2" />
-          Activity Level
-        </Label>
-        <RadioGroup value={activityLevel} onValueChange={setActivityLevel} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-          {ACTIVITY_LEVELS.map(level => (
-            <div key={level}>
-              <RadioGroupItem value={level} id={level} className="peer sr-only" />
-              <Label
-                htmlFor={level}
-                className="flex items-center justify-center px-4 py-2 bg-white border border-gray-200 rounded-md cursor-pointer transition-colors peer-checked:bg-emerald-100 peer-checked:border-emerald-500 hover:bg-gray-50"
-              >
-                {level}
-              </Label>
-            </div>
-          ))}
-        </RadioGroup>
       </div>
 
       <div className="space-y-2">
