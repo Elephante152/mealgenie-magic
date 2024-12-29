@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { MealPlanCard } from './MealPlanCard';
 import type { MealPlan } from '@/types/user';
 
