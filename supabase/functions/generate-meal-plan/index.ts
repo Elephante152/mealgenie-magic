@@ -54,7 +54,7 @@ Format the response as a JSON object with this structure:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: 'Generate a meal plan based on the above preferences.' }
@@ -97,27 +97,40 @@ serve(async (req) => {
   }
 
   try {
-    const { authorization } = req.headers;
-    if (!authorization) {
+    // Get the authorization header
+    const authHeader = req.headers.get('authorization');
+    console.log('Auth header present:', !!authHeader);
+    
+    if (!authHeader) {
       throw new Error('No authorization header');
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    // Create Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Missing Supabase configuration');
+    }
+
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Verify the user's JWT
-    const jwt = authorization.replace('Bearer ', '');
+    const jwt = authHeader.replace('Bearer ', '');
     const { data: { user }, error: userError } = await supabase.auth.getUser(jwt);
     
     if (userError || !user) {
+      console.error('User verification error:', userError);
       throw new Error('Invalid user token');
     }
 
+    console.log('User verified:', user.id);
+
     // Parse the request body
-    const { preferences, additionalRequirements } = await req.json();
+    const { preferences, additionalRequirements, ingredientImageUrl } = await req.json();
     console.log('Received request with preferences:', preferences);
     console.log('Additional requirements:', additionalRequirements);
+    console.log('Ingredient image URL:', ingredientImageUrl);
 
     // Generate meal plan using OpenAI
     const mealPlan = await generateMealPlanWithAI(preferences, additionalRequirements);
