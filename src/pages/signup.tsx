@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
+import { hasCompletedPreferences } from "@/utils/preferences";
 
 export default function SignUp() {
   const navigate = useNavigate();
@@ -32,11 +33,7 @@ export default function SignUp() {
           }
 
           if (profile) {
-            // Check if user has completed onboarding
-            const hasCompletedOnboarding = 
-              profile.preferences?.diet &&
-              Array.isArray(profile.preferences?.cuisines) &&
-              Array.isArray(profile.preferences?.allergies);
+            const hasCompletedOnboarding = hasCompletedPreferences(profile.preferences);
 
             if (hasCompletedOnboarding) {
               navigate("/dashboard");
@@ -82,11 +79,7 @@ export default function SignUp() {
               description: "Your account has been created successfully.",
             });
 
-            // Check if user has completed onboarding
-            const hasCompletedOnboarding = 
-              profile.preferences?.diet &&
-              Array.isArray(profile.preferences?.cuisines) &&
-              Array.isArray(profile.preferences?.allergies);
+            const hasCompletedOnboarding = hasCompletedPreferences(profile.preferences);
 
             if (hasCompletedOnboarding) {
               navigate("/dashboard");

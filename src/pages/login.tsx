@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { hasCompletedPreferences } from "@/utils/preferences";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -30,11 +31,7 @@ export default function Login() {
           }
 
           if (profile) {
-            // Check if user has completed onboarding
-            const hasCompletedOnboarding = 
-              profile.preferences?.diet &&
-              Array.isArray(profile.preferences?.cuisines) &&
-              Array.isArray(profile.preferences?.allergies);
+            const hasCompletedOnboarding = hasCompletedPreferences(profile.preferences);
 
             if (hasCompletedOnboarding) {
               navigate("/dashboard");
@@ -84,11 +81,7 @@ export default function Login() {
               description: `Signed in as ${session.user.email}`,
             });
 
-            // Check if user has completed onboarding
-            const hasCompletedOnboarding = 
-              profile.preferences?.diet &&
-              Array.isArray(profile.preferences?.cuisines) &&
-              Array.isArray(profile.preferences?.allergies);
+            const hasCompletedOnboarding = hasCompletedPreferences(profile.preferences);
 
             if (hasCompletedOnboarding) {
               navigate("/dashboard");
