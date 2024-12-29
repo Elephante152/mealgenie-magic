@@ -8,22 +8,22 @@ export const EmojiBackground = () => {
 
   useEffect(() => {
     const generatePosition = () => {
-      // Create a grid-like distribution
-      const columns = 6;
-      const rows = 4;
+      // Create a grid-like distribution with more columns and rows for better spread
+      const columns = 8;
+      const rows = 6;
       const elements = [];
       
       for (let i = 0; i < columns * rows; i++) {
         const column = i % columns;
         const row = Math.floor(i / columns);
         
-        // Calculate base position with some randomness
+        // Calculate base position with better distribution
         const baseX = (window.innerWidth / columns) * column;
         const baseY = (window.innerHeight / rows) * row;
         
-        // Add random offset to make it look more natural
-        const randomOffsetX = (Math.random() - 0.5) * (window.innerWidth / columns * 0.5);
-        const randomOffsetY = (Math.random() - 0.5) * (window.innerHeight / rows * 0.5);
+        // Add random offset for natural look but maintain better spread
+        const randomOffsetX = (Math.random() - 0.5) * (window.innerWidth / columns * 0.3);
+        const randomOffsetY = (Math.random() - 0.5) * (window.innerHeight / rows * 0.3);
         
         elements.push({
           id: i,
