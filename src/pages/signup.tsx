@@ -82,7 +82,7 @@ export default function SignUp() {
           }}
           view="sign_up"
           showLinks={true}
-          providers={[]}
+          providers={["google"]}
           redirectTo={`${window.location.origin}/onboarding`}
           localization={{
             variables: {
