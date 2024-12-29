@@ -54,7 +54,7 @@ const MealPlans = () => {
         }
 
         // Format the plan content
-        const formattedPlan = formatMealPlanContent(recipeDetails, plan.preferences);
+        const formattedPlan = formatMealPlanContent(recipeDetails);
 
         return {
           id: plan.id,
@@ -62,7 +62,7 @@ const MealPlans = () => {
           plan: formattedPlan,
           isMinimized: false,
           isFavorited: plan.is_favorited || false,
-          preferences: plan.preferences || {
+          preferences: {
             diet: 'omnivore',
             cuisines: [],
             allergies: [],
@@ -79,14 +79,14 @@ const MealPlans = () => {
     },
   });
 
-  const formatMealPlanContent = (recipes: any[], preferences: any) => {
+  const formatMealPlanContent = (recipes: any[]) => {
     if (!recipes || recipes.length === 0) {
       return "No recipes in this meal plan yet.";
     }
 
-    // Create a structured meal plan format
-    const mealsPerDay = preferences?.parameters?.mealsPerDay || 3;
-    const numDays = preferences?.parameters?.numDays || 7;
+    // Create a structured meal plan format with default values
+    const mealsPerDay = 3;
+    const numDays = 7;
     
     let formattedContent = '';
     let recipeIndex = 0;
