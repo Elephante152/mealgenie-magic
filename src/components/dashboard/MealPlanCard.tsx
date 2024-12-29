@@ -1,39 +1,20 @@
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Save, RefreshCw, Star, Trash2, Calendar, Clock, Target } from 'lucide-react'
+import { X, Save, RefreshCw, Star, Trash2 } from 'lucide-react'
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { useState, useEffect } from 'react'
-import { Badge } from "@/components/ui/badge"
-
-interface MealPlan {
-  id: string
-  title: string
-  plan: string
-  isMinimized: boolean
-  recipeId?: string
-  isFavorited?: boolean
-  preferences?: {
-    diet?: string
-    allergies?: string[]
-    cuisines?: string[]
-    additionalRequirements?: string
-    parameters?: {
-      mealsPerDay?: number
-      numDays?: number
-      caloricTarget?: number
-    }
-  }
-}
+import { MealPlanContent } from './MealPlanContent'
+import { MealPlanPreferencesDisplay } from './MealPlanPreferences'
+import type { MealPlan } from '@/types/user'
 
 interface MealPlanCardProps {
-  plan: MealPlan
-  onToggleMinimize: (id: string) => void
-  onClose: (id: string) => void
-  onSave: (id: string) => void
-  onRegenerate: (id: string) => void
-  onDelete: (id: string) => void
+  plan: MealPlan;
+  onToggleMinimize: (id: string) => void;
+  onClose: (id: string) => void;
+  onSave: (id: string) => void;
+  onRegenerate: (id: string) => void;
+  onDelete: (id: string) => void;
 }
 
 export const MealPlanCard = ({
@@ -54,6 +35,10 @@ export const MealPlanCard = ({
     }, 3000)
     return () => clearTimeout(timer)
   }, [])
+
+  if (!plan) {
+    return null;
+  }
 
   const handleRegenerate = async (id: string) => {
     setIsRegenerating(true)
@@ -106,32 +91,6 @@ export const MealPlanCard = ({
         variant: "destructive",
       })
     }
-  }
-
-  // Format the plan content for better readability
-  const formatPlanContent = (content: string) => {
-    return content.split('\n').map((line, index) => {
-      if (line.startsWith('Day')) {
-        return (
-          <div key={index} className="mt-6 mb-3">
-            <h3 className="text-lg font-semibold text-gray-900">{line}</h3>
-          </div>
-        )
-      } else if (line.includes('Breakfast:') || line.includes('Lunch:') || line.includes('Dinner:')) {
-        return (
-          <div key={index} className="mt-4 mb-2">
-            <h4 className="text-md font-medium text-gray-700">{line}</h4>
-          </div>
-        )
-      } else if (line.trim().startsWith('-')) {
-        return (
-          <div key={index} className="ml-4 text-gray-600">
-            {line}
-          </div>
-        )
-      }
-      return <div key={index}>{line}</div>
-    })
   }
 
   return (
@@ -189,62 +148,9 @@ export const MealPlanCard = ({
           <DialogDescription className="mt-2">
             Your personalized meal plan based on your preferences
           </DialogDescription>
-          {plan.preferences && (
-            <div className="mt-4 space-y-2">
-              <div className="flex flex-wrap gap-2">
-                {plan.preferences.diet && (
-                  <Badge variant="secondary" className="bg-emerald-50 text-emerald-700">
-                    {plan.preferences.diet}
-                  </Badge>
-                )}
-                {plan.preferences.allergies?.map((allergy) => (
-                  <Badge key={allergy} variant="secondary" className="bg-red-50 text-red-700">
-                    No {allergy}
-                  </Badge>
-                ))}
-                {plan.preferences.cuisines?.map((cuisine) => (
-                  <Badge key={cuisine} variant="secondary" className="bg-blue-50 text-blue-700">
-                    {cuisine}
-                  </Badge>
-                ))}
-              </div>
-              {plan.preferences.parameters && (
-                <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-                  {plan.preferences.parameters.mealsPerDay && (
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-4 h-4" />
-                      <span>{plan.preferences.parameters.mealsPerDay} meals/day</span>
-                    </div>
-                  )}
-                  {plan.preferences.parameters.caloricTarget && (
-                    <div className="flex items-center gap-1">
-                      <Target className="w-4 h-4" />
-                      <span>{plan.preferences.parameters.caloricTarget} calories/day</span>
-                    </div>
-                  )}
-                  {plan.preferences.parameters.numDays && (
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-4 h-4" />
-                      <span>{plan.preferences.parameters.numDays} days</span>
-                    </div>
-                  )}
-                </div>
-              )}
-              {plan.preferences.additionalRequirements && (
-                <div className="text-sm text-gray-600">
-                  Additional Requirements: {plan.preferences.additionalRequirements}
-                </div>
-              )}
-            </div>
-          )}
+          {plan.preferences && <MealPlanPreferencesDisplay preferences={plan.preferences} />}
         </DialogHeader>
-        <ScrollArea className="p-6 pt-2 max-h-[80vh]">
-          <div className="bg-gradient-to-br from-gray-50 to-white rounded-lg border border-gray-100 p-6">
-            <div className="space-y-1 text-sm text-gray-700 leading-relaxed">
-              {formatPlanContent(plan.plan)}
-            </div>
-          </div>
-        </ScrollArea>
+        <MealPlanContent content={plan.plan} />
         <AnimatePresence>
           {showSuccess && (
             <motion.div
