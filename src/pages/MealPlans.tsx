@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -6,14 +6,15 @@ import { Bookmark, List } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
 import { MealPlanList } from '@/components/dashboard/MealPlanList';
+import { MealPlansHeader } from '@/components/dashboard/MealPlansHeader';
+import { EmptyMealPlans } from '@/components/dashboard/EmptyMealPlans';
 import type { MealPlan, MealPlanPreferences } from '@/types/user';
 
 interface DBMealPlan {
   id: string;
   plan_name: string;
-  recipes: string; // This is actually a JSON string from the database
+  recipes: string;
   created_at: string;
   user_id: string;
   start_date: string | null;
@@ -175,9 +176,7 @@ const MealPlans = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-5xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8 bg-gradient-to-r from-emerald-600 to-emerald-400 bg-clip-text text-transparent">
-          Your Meal Plans
-        </h1>
+        <MealPlansHeader />
 
         <Tabs defaultValue="saved" className="w-full" onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2 mb-8">
@@ -206,16 +205,10 @@ const MealPlans = () => {
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500" />
                     </div>
                   ) : savedPlans?.length === 0 ? (
-                    <div className="text-center py-8">
-                      <p className="text-gray-500">No saved meal plans yet.</p>
-                      <Button
-                        variant="outline"
-                        className="mt-4"
-                        onClick={() => window.location.href = '/dashboard'}
-                      >
-                        Generate a New Plan
-                      </Button>
-                    </div>
+                    <EmptyMealPlans
+                      message="No saved meal plans yet."
+                      actionLabel="Generate a New Plan"
+                    />
                   ) : (
                     <MealPlanList
                       plans={savedPlans || []}
@@ -246,16 +239,10 @@ const MealPlans = () => {
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500" />
                     </div>
                   ) : favoritedPlans?.length === 0 ? (
-                    <div className="text-center py-8">
-                      <p className="text-gray-500">No favorited meal plans yet.</p>
-                      <Button
-                        variant="outline"
-                        className="mt-4"
-                        onClick={() => window.location.href = '/dashboard'}
-                      >
-                        Explore Plans
-                      </Button>
-                    </div>
+                    <EmptyMealPlans
+                      message="No favorited meal plans yet."
+                      actionLabel="Explore Plans"
+                    />
                   ) : (
                     <MealPlanList
                       plans={favoritedPlans || []}
