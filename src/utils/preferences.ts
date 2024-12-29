@@ -11,8 +11,8 @@ const isArray = (value: Json | undefined): value is Json[] => {
   return Array.isArray(value);
 };
 
-// Type guard to check if the object has the required UserPreferences properties
-const isUserPreferences = (obj: { [key: string]: Json }): obj is UserPreferences => {
+// Type guard to check if an object matches the UserPreferences structure
+const isUserPreferences = (obj: { [key: string]: Json }): boolean => {
   return (
     typeof obj.diet === 'string' &&
     isArray(obj.cuisines) &&
