@@ -4,6 +4,7 @@ import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import type { UserPreferences } from "@/hooks/useAuth";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -29,9 +30,12 @@ export default function Login() {
 
         if (error) throw error;
 
+        // Cast the preferences to our UserPreferences type
+        const preferences = profile?.preferences as UserPreferences;
+
         // If user has preferences set (completed onboarding), redirect to dashboard
         // Otherwise, send them to onboarding
-        if (profile?.preferences?.diet) {
+        if (preferences?.diet) {
           toast({
             title: "Welcome back!",
             description: "You have successfully logged in.",
