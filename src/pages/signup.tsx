@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
@@ -12,70 +12,109 @@ export default function SignUp() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  supabase.auth.onAuthStateChange(async (event, session) => {
-    if (event === "SIGNED_IN") {
-      setLoading(true);
+  useEffect(() => {
+    const checkSession = async () => {
       try {
-        if (session?.user?.email_confirmed_at) {
-          const { data: profile, error } = await supabase
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user) {
+          // Check if user profile exists
+          const { data: profile, error: profileError } = await supabase
             .from('profiles')
-            .select('preferences')
+            .select('*')
             .eq('id', session.user.id)
             .single();
 
-          if (error) throw error;
+          if (profileError) {
+            throw profileError;
+          }
 
-          const rawPreferences = profile?.preferences as Record<string, unknown>;
-          const hasCompletedOnboarding = 
-            typeof rawPreferences?.diet === 'string' &&
-            Array.isArray(rawPreferences?.cuisines) &&
-            Array.isArray(rawPreferences?.allergies) &&
-            typeof rawPreferences?.activityLevel === 'string' &&
-            typeof rawPreferences?.calorieIntake === 'number' &&
-            typeof rawPreferences?.mealsPerDay === 'number' &&
-            Array.isArray(rawPreferences?.cookingTools);
+          if (profile) {
+            // Check if user has completed onboarding
+            const hasCompletedOnboarding = 
+              profile.preferences?.diet &&
+              Array.isArray(profile.preferences?.cuisines) &&
+              Array.isArray(profile.preferences?.allergies);
 
-          if (hasCompletedOnboarding) {
+            if (hasCompletedOnboarding) {
+              navigate("/dashboard");
+            } else {
+              navigate("/onboarding");
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error checking session:", error);
+        setError("There was a problem checking your session. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkSession();
+  }, [navigate]);
+
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_IN" && session) {
+        try {
+          // Wait a moment to ensure the profile trigger has completed
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Check if profile exists
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
+          if (profileError) {
+            throw profileError;
+          }
+
+          if (profile) {
             toast({
               title: "Welcome!",
               description: "Your account has been created successfully.",
             });
-            navigate("/dashboard");
-          } else {
-            toast({
-              title: "Welcome!",
-              description: "Let's set up your preferences.",
-            });
-            navigate("/onboarding");
+
+            // Check if user has completed onboarding
+            const hasCompletedOnboarding = 
+              profile.preferences?.diet &&
+              Array.isArray(profile.preferences?.cuisines) &&
+              Array.isArray(profile.preferences?.allergies);
+
+            if (hasCompletedOnboarding) {
+              navigate("/dashboard");
+            } else {
+              navigate("/onboarding");
+            }
           }
-        } else {
-          toast({
-            title: "Please verify your email",
-            description: "Check your inbox for a verification link.",
-          });
+        } catch (error) {
+          console.error("Error during sign up:", error);
+          setError("There was a problem creating your account. Please try again.");
         }
-      } catch (error) {
-        console.error("Error during signup:", error);
-        setError("An unexpected error occurred during signup.");
-      } finally {
-        setLoading(false);
       }
-    } else if (event === "SIGNED_OUT") {
-      setLoading(false);
-    }
-  });
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate, toast]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md p-6 space-y-6 bg-white relative">
-        {loading && (
-          <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-50">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        )}
-        
         <div className="text-center">
           <h2 className="text-3xl font-bold tracking-tight text-gray-900">
             Create your account
@@ -117,19 +156,8 @@ export default function SignUp() {
           }}
           view="sign_up"
           providers={["google"]}
-          redirectTo={window.location.origin + "/dashboard"}
-          localization={{
-            variables: {
-              sign_up: {
-                email_label: "Email address",
-                password_label: "Create a password",
-                email_input_placeholder: "Enter your email",
-                password_input_placeholder: "Create a secure password",
-                button_label: "Create account",
-                social_provider_text: "Continue with {{provider}}",
-              },
-            },
-          }}
+          redirectTo={`${window.location.origin}/dashboard`}
+          onlyThirdPartyProviders={true}
         />
       </Card>
     </div>

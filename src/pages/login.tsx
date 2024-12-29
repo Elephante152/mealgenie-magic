@@ -1,43 +1,122 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
 
 export default function Login() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        navigate("/dashboard");
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user) {
+          // Check if user profile exists
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
+          if (profileError) {
+            throw profileError;
+          }
+
+          if (profile) {
+            // Check if user has completed onboarding
+            const hasCompletedOnboarding = 
+              profile.preferences?.diet &&
+              Array.isArray(profile.preferences?.cuisines) &&
+              Array.isArray(profile.preferences?.allergies);
+
+            if (hasCompletedOnboarding) {
+              navigate("/dashboard");
+            } else {
+              navigate("/onboarding");
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error checking session:", error);
+        toast({
+          title: "Error",
+          description: "There was a problem checking your session. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
       }
     };
-    checkSession();
-  }, [navigate]);
 
-  // Listen for auth state changes
+    checkSession();
+  }, [navigate, toast]);
+
   useEffect(() => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_IN" && session) {
-        toast({
-          title: "Welcome back!",
-          description: `Signed in as ${session.user.email}`,
-        });
-        navigate("/dashboard");
-      } else if (event === "SIGNED_OUT") {
-        navigate("/login");
+        try {
+          // Wait a moment to ensure the profile trigger has completed
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Check if profile exists
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
+          if (profileError) {
+            throw profileError;
+          }
+
+          if (profile) {
+            toast({
+              title: "Welcome!",
+              description: `Signed in as ${session.user.email}`,
+            });
+
+            // Check if user has completed onboarding
+            const hasCompletedOnboarding = 
+              profile.preferences?.diet &&
+              Array.isArray(profile.preferences?.cuisines) &&
+              Array.isArray(profile.preferences?.allergies);
+
+            if (hasCompletedOnboarding) {
+              navigate("/dashboard");
+            } else {
+              navigate("/onboarding");
+            }
+          }
+        } catch (error) {
+          console.error("Error during sign in:", error);
+          toast({
+            title: "Error",
+            description: "There was a problem signing you in. Please try again.",
+            variant: "destructive",
+          });
+        }
       }
     });
 
     return () => subscription.unsubscribe();
   }, [navigate, toast]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
